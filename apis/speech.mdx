@@ -1,0 +1,76 @@
+---
+title: Speech Recognition
+description: Transcribe audio to text using Whisper and other speech recognition models.
+icon: microphone
+---
+
+DeepInfra hosts [Whisper](https://github.com/openai/whisper) and other speech recognition models. Given an audio file, they produce transcribed text with per-sentence timestamps.
+
+Browse [all speech recognition models](https://deepinfra.com/models/automatic-speech-recognition).
+
+## Models
+
+- `openai/whisper-large` — best accuracy
+- `openai/whisper-medium`, `openai/whisper-small`, `openai/whisper-base` — faster, lighter
+- `openai/whisper-timestamped-medium` — per-word timestamp segmentation
+
+## Example
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST \
+    -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+    -F audio=@audio.mp3 \
+    'https://api.deepinfra.com/v1/inference/openai/whisper-large'
+```
+
+```javascript JavaScript
+import { AutomaticSpeechRecognition } from "deepinfra";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const DEEPINFRA_API_KEY = "$DEEPINFRA_TOKEN";
+const MODEL = "openai/whisper-large";
+
+const client = new AutomaticSpeechRecognition(MODEL, DEEPINFRA_API_KEY);
+
+const input = {
+  audio: path.join(__dirname, "audio.mp3"),
+};
+const response = await client.generate(input);
+console.log(response.text);
+```
+
+</CodeGroup>
+
+## Supported audio formats
+
+- `mp3`
+- `wav`
+
+## Response
+
+```json
+{
+  "text": "Hello, this is a transcription of the audio file.",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 3.5,
+      "text": "Hello, this is a transcription of the audio file."
+    }
+  ]
+}
+```
+
+## Additional parameters
+
+Each model exposes different parameters (language, task, etc.). Check the model's API documentation page for details.
+
+## Tutorial
+
+See the [Whisper tutorial](/tutorials/whisper) for a complete walkthrough.

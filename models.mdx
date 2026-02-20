@@ -1,0 +1,38 @@
+---
+title: Models
+description: Browse 100+ open-source models available on DeepInfra.
+icon: brain
+---
+
+DeepInfra hosts a large number of the most popular machine learning models. You can find [the full list here](https://deepinfra.com/models), conveniently split into categories based on their functionality.
+
+We are constantly adding more. DeepInfra is usually amongst the first to add a new model once it is available.
+
+## Model categories
+
+- **[Text generation / LLMs](https://deepinfra.com/models/text-generation)** — Llama, DeepSeek, Mistral, Qwen, Gemma, and more
+- **[Embeddings](https://deepinfra.com/models/embeddings)** — BAAI/bge, sentence-transformers, and more
+- **[Text to image](https://deepinfra.com/models/text-to-image)** — FLUX, Stable Diffusion, and more
+- **[Speech recognition](https://deepinfra.com/models/automatic-speech-recognition)** — Whisper variants
+- **[Vision / multimodal](https://deepinfra.com/models/text-generation)** — Llama Vision, QVQ, and more
+
+## Model pages
+
+Each model has a dedicated page where you can:
+- Try it out interactively
+- See its API documentation
+- Grab ready-to-use code examples
+
+## Private models
+
+We also support deploying [custom models](/private-models/overview) on DeepInfra infrastructure. Run your own fine-tuned or trained-from-scratch LLM on dedicated A100/H100/H200/B200 GPUs.
+
+## Specifying model versions
+
+Some models have more than one version available. You can infer against a particular version using `{"model": "MODEL_NAME:VERSION", ...}` format.
+
+You can also infer against a `deploy_id` using `{"model": "deploy_id:DEPLOY_ID", ...}`. This is especially useful for [Custom LLMs](/private-models/custom-llms) — you can start inferring before the deployment finishes and before you have the model name + version pair.
+
+## Suggest a model
+
+If you think there is a model that we should run, let us know at info@deepinfra.com. We read every email.

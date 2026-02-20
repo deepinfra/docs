@@ -1,0 +1,111 @@
+---
+title: LangChain
+description: Use DeepInfra models with LangChain for LLM-powered applications.
+icon: link
+---
+
+[LangChain](https://python.langchain.com/) is a framework for building applications powered by language models. DeepInfra integrates with LangChain via official adapters for LLMs, chat models, and embeddings.
+
+## Available adapters
+
+- [Chat adapter](https://python.langchain.com/docs/integrations/chat/deepinfra) — for chat-based LLMs
+- [LLM adapter](https://python.langchain.com/docs/integrations/llms/deepinfra) — for text generation LLMs
+- [Embeddings adapter](https://python.langchain.com/docs/integrations/text_embedding/deepinfra) — for embedding models
+
+## Installation
+
+```bash
+pip install langchain langchain-community
+```
+
+Set your API token:
+
+```python
+import os
+os.environ["DEEPINFRA_API_TOKEN"] = "<your DeepInfra API token>"
+```
+
+## LLM examples
+
+```python
+import os
+from langchain_community.llms import DeepInfra
+from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
+
+os.environ["DEEPINFRA_API_TOKEN"] = "<your DeepInfra API token>"
+
+llm = DeepInfra(model_id="meta-llama/Meta-Llama-3-8B-Instruct")
+llm.model_kwargs = {
+    "temperature": 0.7,
+    "repetition_penalty": 1.2,
+    "max_new_tokens": 250,
+    "top_p": 0.9,
+}
+
+# Basic inference
+print(llm.invoke("Who let the dogs out?"))
+
+# Streaming inference
+for chunk in llm.stream("Who let the dogs out?"):
+    print(chunk)
+
+# Chain with prompt template
+template = """Question: {question}
+
+Answer: Let's think step by step."""
+prompt = PromptTemplate(template=template, input_variables=["question"])
+llm_chain = prompt | llm
+print(llm_chain.invoke("Can penguins reach the North pole?"))
+```
+
+## Chat examples
+
+```python
+import os
+from langchain_community.chat_models import ChatDeepInfra
+from langchain_core.messages import HumanMessage
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+
+os.environ["DEEPINFRA_API_TOKEN"] = "<your DeepInfra API token>"
+
+messages = [
+    HumanMessage(content="Translate this sentence from English to French. I love programming.")
+]
+
+# Synchronous
+chat = ChatDeepInfra(model="meta-llama/Meta-Llama-3-8B-Instruct")
+print(chat.invoke(messages))
+
+# Async
+async def async_example():
+    chat = ChatDeepInfra(model="meta-llama/Meta-Llama-3-8B-Instruct")
+    await chat.agenerate([messages])
+
+# Streaming
+chat_stream = ChatDeepInfra(
+    streaming=True,
+    verbose=True,
+    callbacks=[StreamingStdOutCallbackHandler()],
+)
+print(chat_stream.invoke(messages))
+```
+
+## Embeddings
+
+```python
+import os
+from langchain_community.embeddings import DeepInfraEmbeddings
+
+os.environ["DEEPINFRA_API_TOKEN"] = "<your DeepInfra API token>"
+
+embeddings = DeepInfraEmbeddings(
+    model_id="sentence-transformers/clip-ViT-B-32",
+    query_instruction="",
+    embed_instruction="",
+)
+
+docs = ["Dog is not a cat", "Beta is the second letter of Greek alphabet"]
+document_result = embeddings.embed_documents(docs)
+print(document_result)
+```

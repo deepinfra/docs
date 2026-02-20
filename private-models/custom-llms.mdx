@@ -1,0 +1,128 @@
+---
+title: Custom LLMs
+description: Deploy your own LLM on dedicated A100/H100/H200/B200 GPUs with autoscaling and an OpenAI-compatible endpoint.
+icon: robot
+---
+
+Run a dedicated instance of your public or private LLM on DeepInfra infrastructure. Your model gets its own GPU allocation, autoscaling, and an OpenAI-compatible API endpoint.
+
+## Overview
+
+**Benefits:**
+- Predictable response times (no sharing with other users)
+- Autoscaling support
+- Run your own fine-tuned or trained-from-scratch model
+- Full OpenAI API compatibility
+
+**Trade-offs:**
+- Billed per GPU-hour, not per token — you need sufficient load to justify the cost
+
+Public models like Mixtral are shared across many users, giving very competitive per-token pricing. A private deployment gives you full GPU access, so you pay for GPU uptime regardless of traffic.
+
+## Deployment configuration
+
+A deployment has fixed parameters:
+
+| Parameter | Description |
+|-----------|-------------|
+| `model_name` | Name used for inference calls |
+| `gpu` | `A100-80GB` or `H100-80GB` (more options available) |
+| `num_gpus` | Number of GPUs (model weights must fit with room for KV cache) |
+| `max_batch_size` | Max parallel requests; additional requests are queued |
+| `weights` | Hugging Face repo (public or private) |
+
+And dynamic settings (can be changed while running):
+
+| Setting | Description |
+|---------|-------------|
+| `min_instances` | Minimum running copies (0 = scale to zero) |
+| `max_instances` | Maximum copies during high load |
+
+## Create a deployment
+
+### Web UI
+
+Go to [Dashboard → New Deployment → Custom LLM](https://deepinfra.com/dash/deployments?new=custom-llm).
+
+### HTTP API
+
+```bash
+curl -X POST https://api.deepinfra.com/deploy/llm \
+  -d '{
+    "model_name": "test-model",
+    "gpu": "A100-80GB",
+    "num_gpus": 2,
+    "max_batch_size": 64,
+    "hf": {
+        "repo": "meta-llama/Llama-2-7b-chat-hf"
+    },
+    "settings": {
+        "min_instances": 0,
+        "max_instances": 1
+    }
+  }' \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+```
+
+The model's full name will be `YOUR_GITHUB_USERNAME/model-name`.
+
+## Monitor your deployment
+
+Track status via the [Dashboard → Deployments](https://deepinfra.com/dash/deployments) or via HTTP:
+
+```bash
+curl https://api.deepinfra.com/deploy/list \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+```
+
+## Use your deployment
+
+Once running, inference via:
+
+- **Web demo**: `https://deepinfra.com/FULLNAME`
+- **OpenAI ChatCompletions API**
+- **OpenAI Completions API**
+- **DeepInfra inference API**
+
+```bash
+curl "https://api.deepinfra.com/v1/openai/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -d '{
+      "model": "YOUR_USERNAME/test-model",
+      "messages": [{"role": "user", "content": "Hello!"}]
+    }'
+```
+
+You can also use `deploy_id` before the model is running:
+
+```json
+{"model": "deploy_id:YOUR_DEPLOY_ID", ...}
+```
+
+## Update scaling settings
+
+```bash
+curl -X PUT https://api.deepinfra.com/deploy/DEPLOY_ID \
+  -d '{"settings": {"min_instances": 2, "max_instances": 2}}' \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $DEPLOY_API_KEY"
+```
+
+## Delete a deployment
+
+- Use the trash icon in [Dashboard → Deployments](https://deepinfra.com/dash/deployments)
+- Or: `DELETE https://api.deepinfra.com/deploy/DEPLOY_ID`
+
+## Limitations
+
+- **4 GPU limit per user** (e.g., 4×1GPU or 1×4GPU). Contact us for more.
+- GPU availability is not guaranteed during scale-up — you're only billed for what runs
+- Billing happens weekly in a separate invoice
+- Quantization is not currently supported (in progress)
+- `deploy_id` may not be immediately available while the model is deploying
+
+<Warning>
+  Forgetting to shut down a deployment is a common mistake. For example, leaving 2 GPUs running over a weekend (64 hours) at $2/GPU-hour costs $256. Set spending limits in [billing settings](https://deepinfra.com/dash/billing).
+</Warning>

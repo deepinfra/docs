@@ -1,0 +1,65 @@
+---
+title: Stable Diffusion
+description: Generate images with Stable Diffusion and SDXL on DeepInfra.
+icon: image
+---
+
+DeepInfra supports a wide variety of text-to-image models, including Stable Diffusion 1.4, 1.5, 2.1, SDXL, and many derivative models.
+
+Browse [all text-to-image models](https://deepinfra.com/models/text-to-image).
+
+## Quick start
+
+This example uses `stability-ai/sdxl`:
+
+<CodeGroup>
+
+```javascript JavaScript
+import { Sdxl } from "deepinfra";
+import { createWriteStream } from "fs";
+import { Readable } from "stream";
+
+const DEEPINFRA_API_KEY = "$DEEPINFRA_TOKEN";
+
+const model = new Sdxl(DEEPINFRA_API_KEY);
+
+const response = await model.generate({
+  input: {
+    prompt: "a burger with a funny hat on the beach",
+  },
+});
+
+const result = await fetch(response.output[0]);
+
+if (result.ok && result.body) {
+  Readable.fromWeb(result.body).pipe(createWriteStream("image.png"));
+}
+```
+
+```bash cURL
+curl "https://api.deepinfra.com/v1/inference/stability-ai/sdxl" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -d '{
+        "input": {
+          "prompt": "a burger with a funny hat on the beach"
+        }
+      }'
+```
+
+</CodeGroup>
+
+## Advanced options
+
+Each model has its own set of parameters including negative prompts, number of inference steps, guidance scale, seed, and more. Check the model's page for all available options:
+
+- [stability-ai/sdxl](https://deepinfra.com/stability-ai/sdxl)
+- [stabilityai/stable-diffusion-2-1](https://deepinfra.com/stabilityai/stable-diffusion-2-1)
+
+## Using the OpenAI-compatible API
+
+You can also use the OpenAI images API for image generation — see [Image Generation](/apis/image-generation).
+
+## Custom LoRA adapters
+
+To use custom style LoRA adapters for image generation, see [LoRA for Image Generation](/private-models/lora-image).

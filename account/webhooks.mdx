@@ -1,0 +1,92 @@
+---
+title: Webhooks
+description: Receive inference results asynchronously via HTTP callbacks.
+icon: webhook
+---
+
+Webhooks are a feature of the [DeepInfra Native API](/apis/deepinfra-native). They are not supported with the OpenAI-compatible API.
+
+Webhooks let you submit an inference request and receive the result via an HTTP callback, instead of waiting for the response synchronously. This is useful for long-running requests or fire-and-forget workloads.
+
+## How it works
+
+Add a `webhook` parameter to your request. The API immediately responds with status `queued`, then calls your webhook URL with the result once inference is complete.
+
+## Text generation example
+
+<CodeGroup>
+
+```javascript JavaScript
+import { TextGeneration } from "deepinfra";
+
+const client = new TextGeneration(
+  "https://api.deepinfra.com/v1/inference/meta-llama/Meta-Llama-3-8B-Instruct",
+  "$DEEPINFRA_TOKEN"
+);
+
+const res = await client.generate({
+  input: "<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\nHello!<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n",
+  stop: ["<|eot_id|>"],
+  webhook: "https://your-app.com/deepinfra-webhook"
+});
+
+console.log(res.inference_status.status); // "queued"
+```
+
+```bash cURL
+curl "https://api.deepinfra.com/v1/inference/meta-llama/Meta-Llama-3-8B-Instruct" \
+   -H "Content-Type: application/json" \
+   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+   -d '{
+     "input": "<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\nHello!<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n",
+     "stop": ["<|eot_id|>"],
+     "webhook": "https://your-app.com/deepinfra-webhook"
+   }'
+```
+
+</CodeGroup>
+
+## Embeddings example
+
+```bash
+curl "https://api.deepinfra.com/v1/inference/BAAI/bge-large-en-v1.5" \
+   -H "Content-Type: application/json" \
+   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+   -d '{
+     "inputs": ["I like chocolate"],
+     "webhook": "https://your-app.com/deepinfra-webhook"
+   }'
+```
+
+## Webhook payload
+
+On success, your endpoint receives:
+
+```json
+{
+    "request_id": "R7X9fdlIaF5GlVisBAi5xR3E",
+    "inference_status": {
+        "status": "succeeded",
+        "runtime_ms": 228,
+        "cost": 0.0001140000022132881
+    },
+    "results": { ... }
+}
+```
+
+On failure:
+
+```json
+{
+    "request_id": "RHNShFanUP5ExA8rzgyDWH88",
+    "inference_status": {
+        "status": "failed",
+        "runtime_ms": 0,
+        "cost": 0.0
+    }
+}
+```
+
+## Retry behavior
+
+DeepInfra will make a few retry attempts if your webhook endpoint returns a 4xx or 5xx status code.

@@ -1,0 +1,169 @@
+---
+title: DeepInfra Native API
+description: Advanced API with access to all model types including image generation, speech, object detection, and more.
+icon: code
+---
+
+The DeepInfra Native API gives you access to every model we provide, including model types not covered by the OpenAI-compatible API: image generation, speech recognition, object detection, token classification, fill mask, image classification, zero-shot image classification, and text classification.
+
+For LLMs and embeddings, the [OpenAI-compatible API](/chat/overview) is simpler and recommended. Use the native API when you need model types beyond LLMs/embeddings, or when you need features like [webhooks](/account/webhooks) or [log probabilities](/chat/log-probs).
+
+The base endpoint is:
+
+```
+https://api.deepinfra.com/v1/inference/{model_name}
+```
+
+## JavaScript client
+
+```bash
+npm install deepinfra
+```
+
+## Text Generation (LLMs)
+
+```javascript
+import { TextGeneration } from "deepinfra";
+
+const client = new TextGeneration(
+  "https://api.deepinfra.com/v1/inference/meta-llama/Meta-Llama-3-8B-Instruct",
+  "$DEEPINFRA_TOKEN"
+);
+
+const res = await client.generate({
+  input: "<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\nHello!<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n",
+  stop: ["<|eot_id|>"]
+});
+
+console.log(res.results[0].generated_text);
+console.log(res.inference_status.tokens_input, res.inference_status.tokens_generated);
+```
+
+```bash
+curl "https://api.deepinfra.com/v1/inference/meta-llama/Meta-Llama-3-8B-Instruct" \
+   -H "Content-Type: application/json" \
+   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+   -d '{
+     "input": "<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\nHello!<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n",
+     "stop": ["<|eot_id|>"],
+     "stream": false
+   }'
+```
+
+## Embeddings
+
+```javascript
+import { Embeddings } from "deepinfra";
+
+const client = new Embeddings("BAAI/bge-large-en-v1.5", "$DEEPINFRA_TOKEN");
+const output = await client.generate({
+  inputs: [
+    "What is the capital of France?",
+    "What is the capital of Germany?",
+  ],
+});
+console.log(output.embeddings[0]);
+```
+
+```bash
+curl -X POST \
+    -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+    -F 'inputs=["I like chocolate"]' \
+    'https://api.deepinfra.com/v1/inference/BAAI/bge-large-en-v1.5'
+```
+
+## Image Generation
+
+```javascript
+import { TextToImage } from "deepinfra";
+import { createWriteStream } from "fs";
+import { Readable } from "stream";
+
+const model = new TextToImage("stabilityai/stable-diffusion-2-1", "$DEEPINFRA_TOKEN");
+const response = await model.generate({
+  prompt: "a burger with a funny hat on the beach",
+});
+
+const result = await fetch(response.images[0]);
+if (result.ok && result.body) {
+  Readable.fromWeb(result.body).pipe(createWriteStream("image.png"));
+}
+```
+
+```bash
+curl "https://api.deepinfra.com/v1/inference/stabilityai/stable-diffusion-2-1" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -d '{"prompt": "a burger with a funny hat on the beach"}'
+```
+
+## Speech Recognition
+
+```bash
+curl -X POST \
+    -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+    -F audio=@audio.mp3 \
+    'https://api.deepinfra.com/v1/inference/openai/whisper-large'
+```
+
+## Object Detection
+
+```bash
+curl -X POST \
+    -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+    -F image=@image.jpg \
+    'https://api.deepinfra.com/v1/inference/hustvl/yolos-small'
+```
+
+## Token Classification
+
+```bash
+curl -X POST \
+    -d '{"input": "My name is John Doe and I live in San Francisco."}' \
+    -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+    -H 'Content-Type: application/json' \
+    'https://api.deepinfra.com/v1/inference/Davlan/bert-base-multilingual-cased-ner-hrl'
+```
+
+## Fill Mask
+
+```bash
+curl -X POST \
+    -d '{"input": "I need my [MASK] right now!"}' \
+    -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+    -H 'Content-Type: application/json' \
+    'https://api.deepinfra.com/v1/inference/bert-base-cased'
+```
+
+## Image Classification
+
+```bash
+curl -X POST \
+    -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+    -F image=@image.jpg \
+    'https://api.deepinfra.com/v1/inference/google/vit-base-patch16-224'
+```
+
+## Zero-Shot Image Classification
+
+```bash
+curl -X POST \
+    -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+    -F image=@image.jpg \
+    -F 'candidate_labels=["dog", "cat", "car", "horse", "person"]' \
+    'https://api.deepinfra.com/v1/inference/openai/clip-vit-base-patch32'
+```
+
+## Text Classification
+
+```bash
+curl -X POST \
+    -d '{"input": "Nvidia announces new AI chips months after latest launch"}' \
+    -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+    -H 'Content-Type: application/json' \
+    'https://api.deepinfra.com/v1/inference/ProsusAI/finbert'
+```
+
+## HTTP / other languages
+
+The native API is plain HTTP — you can use it from any language (Go, C#, Java, PHP, Ruby, C++, etc.) without any SDK dependency.

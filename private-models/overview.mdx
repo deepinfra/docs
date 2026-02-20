@@ -1,0 +1,58 @@
+---
+title: Deploy Private Models
+description: Run your own LLMs and image models on dedicated GPU infrastructure with autoscaling.
+icon: lock
+---
+
+DeepInfra allows you to deploy your own models on dedicated infrastructure — your weights, your endpoint, your isolation.
+
+## Why run private models?
+
+- **Compliance** — data stays on dedicated infrastructure, not shared with other users
+- **Custom weights** — deploy fine-tuned or trained-from-scratch models
+- **Predictable latency** — no sharing with other users means consistent response times
+- **Autoscaling** — scale from 0 to many instances automatically based on load
+
+## What you can deploy
+
+<CardGroup cols={2}>
+  <Card title="Custom LLMs" icon="robot" href="/private-models/custom-llms">
+    Deploy any Hugging Face LLM on A100/H100/H200/B200 GPUs with the OpenAI-compatible API.
+  </Card>
+  <Card title="LoRA Adapters" icon="sliders" href="/private-models/lora">
+    Deploy LoRA fine-tuned language models on top of supported base models.
+  </Card>
+  <Card title="LoRA Image Models" icon="image" href="/private-models/lora-image">
+    Deploy LoRA adapters for image generation from Civitai.
+  </Card>
+</CardGroup>
+
+## GPU options
+
+Private model deployments run on:
+
+- **A100-80GB** — proven workhorse for LLM inference
+- **H100-80GB** — latest NVIDIA flagship, 2x faster than A100 for many workloads
+- **H200** — H100 with 141GB HBM3e memory, ideal for large models
+- **B200** — next-generation Blackwell GPU
+
+## Pricing model
+
+Unlike shared inference (pay per token), private deployments are billed per GPU-hour. You pay for the time your GPUs are running, regardless of traffic.
+
+<Warning>
+  Leaving a custom deployment running by mistake can rack up costs quickly. For example, forgetting to shut down a 2-GPU deployment over a weekend (64 hours) costs ~$256 USD. Always set spending limits in [payment settings](https://deepinfra.com/dash/billing).
+</Warning>
+
+## Getting started
+
+1. Go to [Dashboard → Deployments](https://deepinfra.com/dash/deployments)
+2. Click **New Deployment**
+3. Choose your deployment type (Custom LLM, LoRA, or LoRA Image)
+4. Fill in the configuration and deploy
+
+See the specific guides for each deployment type:
+
+- [Custom LLMs](/private-models/custom-llms)
+- [LoRA Adapters](/private-models/lora)
+- [LoRA Image Models](/private-models/lora-image)

@@ -1,0 +1,56 @@
+---
+title: LoRA for Image Generation
+description: Deploy LoRA adapters for text-to-image generation using models from Civitai.
+icon: image
+---
+
+Deploy LoRA adapters for image generation on top of supported base image models. Source your LoRA from [Civitai](https://civitai.com).
+
+## Prerequisites
+
+1. A public LoRA model from Civitai
+2. A DeepInfra account
+
+## Deploy an image LoRA
+
+1. Go to [Dashboard](https://deepinfra.com/dash)
+2. Click **New Deployment**
+3. Click the **LoRA text to image** tab
+4. Fill in the form:
+   - **LoRA model name** — name used to reference this deployment
+   - **Base Model** — select the base model for this LoRA
+   - **Civitai URL** — URL of the LoRA model from civitai.com
+
+The deployment appears in [Dashboard → Deployments](https://deepinfra.com/dash/deployments) with state `Initializing`. Deployment time varies from 5 seconds to 1 minute depending on LoRA size. Once `Running`, the model is ready to use.
+
+## Inference
+
+### Direct API endpoint
+
+```bash
+curl "https://api.deepinfra.com/yourname/yourmodel" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -d '{
+      "prompt": "A cat in anime style",
+      "lora_scale": 0.7
+    }'
+```
+
+### OpenAI-compatible endpoint
+
+```bash
+curl "https://api.deepinfra.com/v1/openai/images/generations" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -d '{
+      "model": "yourname/yourmodel",
+      "prompt": "A cat in anime style"
+    }'
+```
+
+## Notes
+
+- Only public Civitai models are supported
+- Base models support the same parameters as their original versions
+- `lora_scale` controls the strength of the LoRA adaptation (0.0–1.0)

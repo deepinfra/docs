@@ -1,0 +1,134 @@
+---
+title: Vision
+description: Send images alongside text to multimodal models.
+icon: eye
+---
+
+DeepInfra hosts multimodal models that accept both images and text as input and produce text output. These models use the standard OpenAI vision API format.
+
+## Available vision models
+
+- [meta-llama/Llama-3.2-90B-Vision-Instruct](https://deepinfra.com/meta-llama/Llama-3.2-90B-Vision-Instruct)
+- [meta-llama/Llama-3.2-11B-Vision-Instruct](https://deepinfra.com/meta-llama/Llama-3.2-11B-Vision-Instruct)
+- [Qwen/QVQ-72B-Preview](https://deepinfra.com/Qwen/QVQ-72B-Preview)
+
+## Quick start
+
+Images are passed in two ways:
+1. **URL** — pass a link to a publicly accessible image
+2. **Base64** — encode the image and include it directly in the request
+
+### Image URL
+
+```bash
+curl "https://api.deepinfra.com/v1/openai/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -d '{
+    "model": "meta-llama/Llama-3.2-90B-Vision-Instruct",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "image_url",
+            "image_url": {
+              "url": "https://shared.deepinfra.com/models/llava-hf/llava-1.5-7b-hf/cover_image.ed4fba7a25b147e7fe6675e9f760585e11274e8ee72596e6412447260493cd4f-s600.webp"
+            }
+          },
+          {
+            "type": "text",
+            "text": "What'\''s in this image?"
+          }
+        ]
+      }
+    ]
+  }'
+```
+
+### Base64 encoded image
+
+```python
+from openai import OpenAI
+import base64
+import requests
+
+openai = OpenAI(
+    api_key="$DEEPINFRA_TOKEN",
+    base_url="https://api.deepinfra.com/v1/openai",
+)
+
+image_url = "https://shared.deepinfra.com/models/llava-hf/llava-1.5-7b-hf/cover_image.ed4fba7a25b147e7fe6675e9f760585e11274e8ee72596e6412447260493cd4f-s600.webp"
+base64_image = base64.b64encode(requests.get(image_url).content).decode("utf-8")
+
+chat_completion = openai.chat.completions.create(
+    model="meta-llama/Llama-3.2-90B-Vision-Instruct",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{base64_image}"
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": "What's in this image?"
+                }
+            ]
+        }
+    ]
+)
+
+print(chat_completion.choices[0].message.content)
+```
+
+## Multiple images
+
+You can pass multiple images in a single request by including multiple `image_url` content items:
+
+```bash
+curl "https://api.deepinfra.com/v1/openai/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -d '{
+    "model": "meta-llama/Llama-3.2-90B-Vision-Instruct",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "image_url",
+            "image_url": {
+              "url": "https://example.com/image1.jpg"
+            }
+          },
+          {
+            "type": "image_url",
+            "image_url": {
+              "url": "https://example.com/image2.jpg"
+            }
+          },
+          {
+            "type": "text",
+            "text": "What'\''s in these images?"
+          }
+        ]
+      }
+    ]
+  }'
+```
+
+## Pricing and token counting
+
+Images are tokenized and billed as input tokens. The number of tokens consumed by an image is reported in the response under `"usage": {"prompt_tokens": ...}`.
+
+Different models work with different image resolutions. You can still pass images of any resolution — the model will rescale them automatically. Check the model's documentation page for supported resolutions.
+
+## Limitations
+
+- Supported image formats: **jpg**, **png**, **webp**
+- Maximum image size: **20MB**
+- The `detail` parameter (image fidelity) is not currently supported

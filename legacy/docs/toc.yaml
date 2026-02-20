@@ -1,0 +1,86 @@
+structure:
+  - title: Getting Started
+    url: /docs
+    entries:
+      - title: Quick Start Guide
+        url: /docs/getting-started
+      - title: Available Models
+        url: /docs/models
+      - title: Running Inference
+        url: /docs/inference
+      - title: Data Privacy & Security
+        url: /docs/data
+  
+  - title: API Reference
+    url: /docs/api-reference
+    entries:
+      - title: OpenAI-Compatible API
+        url: /docs/openai_api
+      - title: DeepInfra Native API
+        url: /docs/deep_infra_api
+      - title: Rate Limits
+        url: /docs/advanced/rate-limits
+      - title: Webhooks
+        url: /docs/advanced/webhooks
+      - title: Authentication & Tokens
+        url: /docs/advanced/scoped_jwt
+
+  - title: Model Features
+    url: /docs/model-features
+    entries:
+      - title: Function Calling
+        url: /docs/advanced/function_calling
+      - title: JSON Mode
+        url: /docs/advanced/json_mode
+      - title: Multimodal Models
+        url: /docs/advanced/multimodal
+      - title: Log Probabilities
+        url: /docs/advanced/log_probs
+      - title: Max Output Tokens
+        url: /docs/advanced/max_tokens_limit
+
+  - title: GPU Instances
+    url: /docs/gpu-instances
+    entries:
+      - title: Containers
+        url: /docs/gpu-instances/containers
+
+  - title: Custom Deployments
+    url: /docs/custom-deployments
+    entries:
+      - title: Custom LLMs
+        url: /docs/advanced/custom_llms
+      - title: LoRA Adapter Models
+        url: /docs/advanced/lora
+      - title: LoRA Image Adapters
+        url: /docs/advanced/lora_text_to_image
+
+  - title: Integrations
+    url: /docs/integrations
+    entries:
+      - title: LangChain
+        url: /docs/advanced/langchain
+      - title: LlamaIndex
+        url: /docs/advanced/llama-index
+      - title: AI SDK
+        url: /docs/advanced/aisdk
+      - title: AutoGen
+        url: /docs/advanced/autogen
+      - title: Okta SSO
+        url: /docs/advanced/okta
+
+  - title: Tutorials & Examples
+    url: /docs/tutorials
+    entries:
+      - title: Stable Diffusion (Text to Image)
+        url: /docs/tutorials/stable-diffusion
+      - title: Whisper (Speech to Text)
+        url: /docs/tutorials/whisper
+      - title: Deprecated Models
+        url: /docs/advanced/deprecated
+
+  - title: Miscellaneous
+    url: /docs/misc
+    entries:
+      - title: Data Subprocessors
+        url: /docs/misc/subprocessors

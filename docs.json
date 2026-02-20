@@ -1,72 +1,13 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "DeepInfra",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#6366F1",
+    "light": "#818CF8",
+    "dark": "#4F46E5"
   },
   "favicon": "/favicon.svg",
-  "navigation": {
-    "tabs": [
-      {
-        "tab": "Guides",
-        "groups": [
-          {
-            "group": "Getting started",
-            "pages": [
-              "index",
-              "quickstart",
-              "development"
-            ]
-          },
-          {
-            "group": "Customization",
-            "pages": [
-              "essentials/settings",
-              "essentials/navigation"
-            ]
-          },
-          {
-            "group": "Writing content",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "API reference",
-	"openapi": "https://api.deepinfra.com/openapi.json"
-      }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
   "logo": {
     "light": "/logo/light.svg",
     "dark": "/logo/dark.svg"
@@ -75,32 +16,131 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "href": "mailto:support@deepinfra.com"
       }
     ],
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "href": "https://deepinfra.com/dashboard"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "index",
+              "quickstart",
+              "models"
+            ]
+          },
+          {
+            "group": "Chat Completions",
+            "pages": [
+              "chat/overview",
+              "chat/streaming",
+              "chat/structured-outputs",
+              "chat/tool-calling",
+              "chat/vision",
+              "chat/prompt-caching",
+              "chat/log-probs"
+            ]
+          },
+          {
+            "group": "More APIs",
+            "pages": [
+              "apis/completions",
+              "apis/embeddings",
+              "apis/image-generation",
+              "apis/speech",
+              "apis/deepinfra-native"
+            ]
+          },
+          {
+            "group": "Deploy Private Models",
+            "pages": [
+              "private-models/overview",
+              "private-models/custom-llms",
+              "private-models/lora",
+              "private-models/lora-image"
+            ]
+          },
+          {
+            "group": "GPU Instances",
+            "pages": [
+              "gpu-instances/overview"
+            ]
+          },
+          {
+            "group": "Account & Security",
+            "pages": [
+              "account/authentication",
+              "account/rate-limits",
+              "account/webhooks",
+              "account/okta-sso",
+              "account/data-privacy",
+              "account/subprocessors"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "integrations/langchain",
+              "integrations/llama-index",
+              "integrations/ai-sdk",
+              "integrations/autogen"
+            ]
+          },
+          {
+            "group": "Tutorials",
+            "pages": [
+              "tutorials/stable-diffusion",
+              "tutorials/whisper"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "openapi": "https://api.deepinfra.com/openapi.json"
+      }
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Models",
+          "href": "https://deepinfra.com/models",
+          "icon": "brain"
+        },
+        {
+          "anchor": "Discord",
+          "href": "https://discord.gg/deepinfra",
+          "icon": "discord"
+        }
+      ]
     }
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "x": "https://x.com/deepinfra",
+      "github": "https://github.com/deepinfra",
+      "linkedin": "https://linkedin.com/company/deepinfra"
     }
   }
 }

@@ -1,0 +1,48 @@
+---
+title: Okta SSO
+description: Configure Okta as a Single Sign-On provider for your DeepInfra team.
+icon: shield-halved
+---
+
+DeepInfra supports Okta-based Single Sign-On (SSO) via OpenID Connect for teams that need centralized identity management.
+
+## Supported features
+
+- SSO initiated via Okta (IdP-initiated)
+- SSO initiated via DeepInfra (SP-initiated)
+- Automatic account creation on first sign-in
+
+## Configuration steps
+
+1. **Install the DeepInfra app** in your Okta instance
+2. **Fill in the configuration**:
+   - **Team ID** — your Okta subdomain is a good starting point. For multi-tenancy (multiple teams in one Okta instance), use `subdomain-group`. Lowercase only, starting with subdomain, dashes for separators.
+   - **Use Stage** — leave blank
+3. **Assign users or groups** who should have access to DeepInfra
+4. In the DeepInfra App (inside Okta), go to the **Sign On** tab and note the **Client ID** and **Client Secret**
+5. For the **Issuer** (your Okta domain): find the link titled *OpenID Provider Metadata*, click it, and copy the `"issuer"` URL from the JSON document
+6. **Email feedback@deepinfra.com** with:
+   - Team ID
+   - Issuer
+   - Client ID
+   - Client Secret
+   - Admin email (the user who will be team admin)
+
+After setup is complete, users can sign in via:
+- Okta dashboard
+- DeepInfra's [SSO login page](https://deepinfra.com/login_sso) (enter your Team ID)
+
+## SP-initiated SSO
+
+1. Go to [deepinfra.com/login](https://deepinfra.com/login)
+2. Click **Corporate SSO**
+3. Enter your **Team ID** and click **SSO Login**
+4. Enter your Okta credentials and click **Sign in with Okta**
+5. You're redirected to the DeepInfra dashboard
+
+## Team management notes
+
+- Admin can change team member roles (member / admin)
+- Admin has access to the billing dashboard
+- All team members share the same API tokens and models
+- For per-user isolation (separate tokens and models per person), contact us

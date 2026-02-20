@@ -1,0 +1,190 @@
+---
+title: Chat Completions
+description: OpenAI-compatible chat completions API — just change the base URL and model name.
+icon: comments
+---
+
+DeepInfra offers an OpenAI-compatible API for all [LLM models](https://deepinfra.com/models/text-generation). The endpoint is:
+
+```
+https://api.deepinfra.com/v1/openai
+```
+
+The only changes you need to make from your existing OpenAI code:
+1. Set `base_url` to `https://api.deepinfra.com/v1/openai`
+2. Set `api_key` to your DeepInfra token
+3. Set `model` to a model from [our catalog](https://deepinfra.com/models)
+
+## Install the SDK
+
+<CodeGroup>
+
+```bash Python
+pip install openai
+```
+
+```bash JavaScript
+npm install openai
+```
+
+</CodeGroup>
+
+## Basic chat completion
+
+<CodeGroup>
+
+```python Python
+from openai import OpenAI
+
+openai = OpenAI(
+    api_key="$DEEPINFRA_TOKEN",
+    base_url="https://api.deepinfra.com/v1/openai",
+)
+
+chat_completion = openai.chat.completions.create(
+    model="meta-llama/Meta-Llama-3-8B-Instruct",
+    messages=[{"role": "user", "content": "Hello"}],
+)
+
+print(chat_completion.choices[0].message.content)
+print(chat_completion.usage.prompt_tokens, chat_completion.usage.completion_tokens)
+```
+
+```javascript JavaScript
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  apiKey: "$DEEPINFRA_TOKEN",
+  baseURL: "https://api.deepinfra.com/v1/openai",
+});
+
+const completion = await openai.chat.completions.create({
+  messages: [{ role: "user", content: "Hello" }],
+  model: "meta-llama/Meta-Llama-3-8B-Instruct",
+});
+
+console.log(completion.choices[0].message.content);
+console.log(completion.usage.prompt_tokens, completion.usage.completion_tokens);
+```
+
+```bash cURL
+curl "https://api.deepinfra.com/v1/openai/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -d '{
+      "model": "meta-llama/Meta-Llama-3-8B-Instruct",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Hello!"
+        }
+      ]
+    }'
+```
+
+</CodeGroup>
+
+## Multi-turn conversations
+
+To create a longer conversation, include the full message history in every request. The model uses this context to provide better answers.
+
+<CodeGroup>
+
+```python Python
+from openai import OpenAI
+
+openai = OpenAI(
+    api_key="$DEEPINFRA_TOKEN",
+    base_url="https://api.deepinfra.com/v1/openai",
+)
+
+chat_completion = openai.chat.completions.create(
+    model="meta-llama/Meta-Llama-3-8B-Instruct",
+    messages=[
+        {"role": "system", "content": "Respond like a michelin starred chef."},
+        {"role": "user", "content": "Can you name at least two different techniques to cook lamb?"},
+        {"role": "assistant", "content": "Bonjour! Let me tell you, my friend, cooking lamb is an art form..."},
+        {"role": "user", "content": "Tell me more about the second method."},
+    ],
+)
+
+print(chat_completion.choices[0].message.content)
+```
+
+```javascript JavaScript
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  baseURL: "https://api.deepinfra.com/v1/openai",
+  apiKey: "$DEEPINFRA_TOKEN",
+});
+
+const completion = await openai.chat.completions.create({
+  messages: [
+    {role: "system", content: "Respond like a michelin starred chef."},
+    {role: "user", content: "Can you name at least two different techniques to cook lamb?"},
+    {role: "assistant", content: "Bonjour! Let me tell you, my friend, cooking lamb is an art form..."},
+    {role: "user", content: "Tell me more about the second method."}
+  ],
+  model: "meta-llama/Meta-Llama-3-8B-Instruct",
+});
+
+console.log(completion.choices[0].message.content);
+```
+
+```bash cURL
+curl "https://api.deepinfra.com/v1/openai/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -d '{
+      "model": "meta-llama/Meta-Llama-3-8B-Instruct",
+      "messages": [
+        {"role": "system", "content": "Respond like a michelin starred chef."},
+        {"role": "user", "content": "Can you name at least two different techniques to cook lamb?"},
+        {"role": "assistant", "content": "Bonjour! Let me tell you..."},
+        {"role": "user", "content": "Tell me more about the second method."}
+      ]
+    }'
+```
+
+</CodeGroup>
+
+The longer the conversation, the more tokens it uses. The maximum conversation length is determined by the model's context size.
+
+## Supported parameters
+
+| Parameter | Notes |
+|-----------|-------|
+| `model` | Model name, or `MODEL_NAME:VERSION`, or `deploy_id:DEPLOY_ID` |
+| `messages` | Roles: `system`, `user`, `assistant` |
+| `max_tokens` | |
+| `stream` | See [Streaming](/chat/streaming) |
+| `temperature` | |
+| `top_p` | |
+| `stop` | |
+| `n` | |
+| `presence_penalty` | |
+| `frequency_penalty` | |
+| `response_format` | See [Structured Outputs](/chat/structured-outputs) |
+| `tools`, `tool_choice` | See [Tool Calling](/chat/tool-calling) |
+
+<Note>
+  We may not be 100% compatible with all OpenAI parameters. Let us know on Discord or by email if something you need is missing.
+</Note>
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Streaming" icon="wave-pulse" href="/chat/streaming">
+    Stream tokens as they're generated.
+  </Card>
+  <Card title="Structured Outputs" icon="brackets-curly" href="/chat/structured-outputs">
+    Get responses in JSON format.
+  </Card>
+  <Card title="Tool Calling" icon="wrench" href="/chat/tool-calling">
+    Give models access to external functions.
+  </Card>
+  <Card title="Vision" icon="eye" href="/chat/vision">
+    Send images alongside text.
+  </Card>
+</CardGroup>

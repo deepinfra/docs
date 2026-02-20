@@ -1,0 +1,105 @@
+---
+title: Structured Outputs
+description: Get model responses in JSON format using response_format.
+icon: brackets-curly
+---
+
+In addition to text, the DeepInfra API can return responses in JSON format. This is supported in both our inference API and our OpenAI-compatible API, across [many of our models](https://deepinfra.com/models?q=json).
+
+To activate JSON mode, add `response_format: {"type": "json_object"}` to your request.
+
+## Example
+
+<CodeGroup>
+
+```python Python
+import openai
+import json
+
+client = openai.OpenAI(
+    base_url="https://api.deepinfra.com/v1/openai",
+    api_key="$DEEPINFRA_TOKEN",
+)
+
+messages = [
+    {
+        "role": "user",
+        "content": "Provide a JSON list of 3 famous scientific breakthroughs in the past century, all of the countries which contributed, and in what year."
+    }
+]
+
+response = client.chat.completions.create(
+    model="mistralai/Mistral-7B-Instruct-v0.1",
+    messages=messages,
+    response_format={"type": "json_object"},
+    tool_choice="auto",
+)
+
+print(response.choices[0].message.content)
+```
+
+```bash cURL
+curl "https://api.deepinfra.com/v1/openai/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -d '{
+      "model": "mistralai/Mistral-7B-Instruct-v0.1",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Provide a JSON list of 3 famous scientific breakthroughs."
+        }
+      ],
+      "response_format": {"type": "json_object"}
+    }'
+```
+
+</CodeGroup>
+
+The `response.choices[0].message.content` will contain a JSON string:
+
+```json
+{
+  "breakthroughs": [
+    {
+      "name": "Penicillin",
+      "country": "UK",
+      "year": 1928
+    },
+    {
+      "name": "The Double Helix Structure of DNA",
+      "country": "US",
+      "year": 1953
+    },
+    {
+      "name": "Artificial Heart",
+      "country": "US",
+      "year": 2008
+    }
+  ]
+}
+```
+
+## Tips
+
+**Always prompt the model to produce JSON.** While not strictly required, failing to mention JSON in your prompt can occasionally produce inconsistent output. Example: *"Respond with a JSON object containing..."*
+
+**Watch for truncation.** If the model stops due to `max_tokens` or `length`, the JSON may be incomplete (e.g., missing closing braces). Always validate the output before parsing.
+
+## Caveats
+
+<Warning>
+  JSON mode can affect model alignment. When forced to produce structured output, some models are more likely to hallucinate values rather than say "I don't know." This is especially visible for prompts about real-time data (weather, stock prices, etc.).
+
+  Example: asking "What's the weather in San Francisco?" with JSON mode enabled may cause the model to fabricate a weather forecast rather than explaining it doesn't have real-time data.
+</Warning>
+
+**Best practices:**
+- Use JSON mode for structured data extraction tasks, not for general question answering
+- Keep prompts specific about the expected schema
+- Validate model output before using it in production systems
+- Use lower temperatures (< 0.7) for more consistent structure
+
+## Learn more
+
+For a deeper dive into JSON mode behavior, see the [DeepInfra blog](/blog/json-mode).

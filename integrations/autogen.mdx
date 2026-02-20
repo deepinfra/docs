@@ -1,0 +1,75 @@
+---
+title: AutoGen
+description: Build multi-agent LLM applications with AutoGen using DeepInfra endpoints.
+icon: robot
+---
+
+[AutoGen](https://github.com/microsoft/autogen) is a framework for building LLM applications with multiple agents that converse to solve tasks. It works with DeepInfra via the OpenAI-compatible API.
+
+## Installation
+
+```bash
+pip install pyautogen
+```
+
+## Configuration
+
+Point AutoGen at the DeepInfra endpoint using `base_url`:
+
+```python
+import autogen
+
+config_list = [
+    {
+        "model": "meta-llama/Meta-Llama-3-70B-Instruct",
+        "base_url": "https://api.deepinfra.com/v1/openai",
+        "api_key": "<your DeepInfra API key here>"
+    }
+]
+
+llm_config = {"config_list": config_list, "seed": 42}
+
+assistant = autogen.AssistantAgent("assistant", llm_config=llm_config)
+user_proxy = autogen.UserProxyAgent("user_proxy", code_execution_config={"work_dir": "coding"})
+user_proxy.initiate_chat(assistant, message="What time is it right now?")
+```
+
+You can use any [OpenAI-compatible LLM](https://deepinfra.com/models/text-generation) from DeepInfra.
+
+## How it works
+
+In the example above, two agents converse to solve the task:
+1. The **assistant** agent generates a Python code snippet to get the current time
+2. The **user_proxy** agent automatically detects and executes the code block
+3. The result is sent back to the assistant, which summarizes it
+
+Example output:
+
+```text
+user_proxy (to assistant):
+
+What time is it now?
+
+--------------------------------------------------------------------------------
+assistant (to user_proxy):
+
+To get the current time, you can use the `datetime` module in Python...
+
+```python
+import datetime
+current_time = datetime.datetime.now()
+print(current_time.strftime("%I:%M %p"))
+```
+
+--------------------------------------------------------------------------------
+user_proxy (to assistant):
+
+exitcode: 0 (execution succeeded)
+Code output:
+02:20 PM
+
+--------------------------------------------------------------------------------
+assistant (to user_proxy):
+
+The current time is 02:20 PM.
+```

@@ -1,0 +1,93 @@
+---
+title: Prompt Caching
+description: Reduce latency and cost by caching repeated prompt prefixes.
+icon: database
+---
+
+Prompt caching allows DeepInfra to reuse the KV (key-value) cache from previous requests when the beginning of your prompt is identical. This reduces both latency and cost for workloads that repeatedly send the same prefix — such as a long system prompt, a large document, or a fixed set of few-shot examples.
+
+## How it works
+
+When you send a request, DeepInfra checks whether the beginning of your prompt matches a cached prefix from a recent request on the same model. If it does, the cached KV state is reused instead of recomputing it, which:
+
+- **Reduces time-to-first-token** — the model skips processing the cached portion
+- **Lowers cost** — cached input tokens are billed at a reduced rate
+
+## Usage
+
+Prompt caching is **automatic** — no extra parameters required. Just structure your prompts so that the reused content appears at the beginning.
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="$DEEPINFRA_TOKEN",
+    base_url="https://api.deepinfra.com/v1/openai",
+)
+
+# Long system prompt that stays the same across requests
+SYSTEM_PROMPT = """You are a helpful AI assistant with deep expertise in Python.
+[... thousands of tokens of instructions or context ...]
+"""
+
+# First request — full processing
+response1 = client.chat.completions.create(
+    model="meta-llama/Meta-Llama-3.1-70B-Instruct",
+    messages=[
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": "How do I use list comprehensions?"},
+    ],
+)
+
+# Second request — cached prefix reused, faster and cheaper
+response2 = client.chat.completions.create(
+    model="meta-llama/Meta-Llama-3.1-70B-Instruct",
+    messages=[
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": "What are Python generators?"},
+    ],
+)
+```
+
+## Best practices
+
+**Put stable content first.** The cache matches from the beginning of the prompt. Place your system prompt, documents, and few-shot examples before the user's message.
+
+**Keep the prefix identical.** Even a single character difference will invalidate the cache. Avoid dynamic content (timestamps, user IDs, etc.) in the cacheable prefix.
+
+**Longer prefixes save more.** Prompt caching is most effective with long, repeated prefixes — think multi-page documents, long system prompts, or RAG context.
+
+## Common use cases
+
+| Use case | Cached prefix |
+|----------|---------------|
+| Chatbot with a long system prompt | System prompt |
+| RAG / document Q&A | Retrieved documents |
+| Few-shot classification | Examples |
+| Code assistant with a large codebase | Codebase context |
+| Multi-turn conversation | Previous turns |
+
+## Checking cache usage
+
+The response usage object indicates how many tokens were served from cache:
+
+```json
+{
+  "usage": {
+    "prompt_tokens": 5000,
+    "completion_tokens": 50,
+    "total_tokens": 5050,
+    "prompt_tokens_details": {
+      "cached_tokens": 4800
+    }
+  }
+}
+```
+
+In this example, 4800 of the 5000 input tokens were cached.
+
+## Notes
+
+- Prompt caching is available on supported models — check the model page for details
+- Cache entries expire after a period of inactivity
+- Caches are per-model and per-account

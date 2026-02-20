@@ -1,0 +1,109 @@
+---
+title: GPU Instances
+description: Rent bare-metal GPU instances with SSH access — B200, H200, and more.
+icon: server
+---
+
+GPU Instances provide on-demand access to high-performance GPU compute in the cloud. You get a dedicated container with SSH access and full control over your environment.
+
+## Key features
+
+- **Dedicated GPU access** — no sharing with other users
+- **SSH access** — connect directly to your container
+- **Flexible GPU configs** — B200, H200, H100, A100, and more
+- **Pay-per-use** — billed by the hour, only while running
+- **Quick setup** — running in minutes
+
+## Use cases
+
+- LLM training and fine-tuning
+- GPU-accelerated inference workloads
+- Data processing and analysis
+- Development and testing of GPU applications
+- Research and experimentation
+
+## Web UI
+
+### Start a new container
+
+1. Go to [Dashboard → Instances](https://deepinfra.com/dash/instances)
+2. Click **New Container**
+3. **Select GPU configuration** — choose from available GPU types. Each shows:
+   - GPU type, quantity, and memory (e.g., `1xB200-180GB`, `8xH200-141GB`)
+   - Hourly pricing
+   - Availability status
+4. **Enter container details**:
+   - **Container Name** — a descriptive name
+   - **SSH Key** — paste your public SSH key (format: `ssh-rsa AAAAB3NzaC1yc2E...`)
+5. Accept the NVIDIA license agreements and cryptocurrency mining policy
+6. Click **I agree to the above**
+
+### Connect to a running container
+
+1. Wait for container status to show `running`
+2. Click on the SSH login field to copy the command
+3. Run `ssh ubuntu@<ip-address>` in your terminal
+
+### Stop a container
+
+1. Click on the container in the instances list
+2. Click **Terminate**
+3. Type `confirm` and click **Terminate**
+
+<Warning>
+  All container data is permanently lost when terminated. Save your work before stopping.
+</Warning>
+
+## HTTP API
+
+### Create a container
+
+```bash
+curl -X POST https://api.deepinfra.com/v1/containers \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "my-container",
+    "gpu_config": "8xB200-180GB",
+    "container_image": "di-cont-ubuntu-torch:latest",
+    "cloud_init_user_data": "#cloud-config\nusers:\n- name: ubuntu\n  shell: /bin/bash\n  sudo: '\''ALL=(ALL) NOPASSWD:ALL'\''\n  ssh_authorized_keys:\n  - ssh-rsa AAAAB3NzaC1yc2E..."
+  }'
+```
+
+### Get container details
+
+```bash
+curl -X GET https://api.deepinfra.com/v1/containers/{container_id} \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+```
+
+Once `running`, connect via SSH:
+
+```bash
+ssh ubuntu@<container-ip>
+```
+
+### List containers
+
+```bash
+curl -X GET https://api.deepinfra.com/v1/containers \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+```
+
+### Terminate a container
+
+```bash
+curl -X DELETE https://api.deepinfra.com/v1/containers/{container_id} \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+```
+
+## Container lifecycle
+
+| State | Description |
+|-------|-------------|
+| `creating` | Container is being initialized |
+| `starting` | Container is booting up |
+| `running` | Container is active and accessible |
+| `shutting_down` | Container is being terminated |
+| `failed` | Container failed to start or encountered an error |
+| `deleted` | Container has been permanently removed |

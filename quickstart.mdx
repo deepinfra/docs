@@ -1,80 +1,130 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Make your first API call in 60 seconds — no installation required.
+icon: play
 ---
 
-## Get started in three steps
+You don't need to install anything to do your first inference. You only need [your access token](https://deepinfra.com/dash/api_keys).
 
-Get your documentation site running locally and make your first customization.
+## Step 1: Get your API key
 
-### Step 1: Set up your local environment
+Go to the [Dashboard](https://deepinfra.com/dash/api_keys) and create an API key. If you're logged in, examples throughout the docs will have your token pre-filled.
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+## Step 2: Make your first API call
 
-### Step 2: Deploy your changes
+<CodeGroup>
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+```bash cURL
+curl "https://api.deepinfra.com/v1/openai/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -d '{
+      "model": "meta-llama/Meta-Llama-3-8B-Instruct",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Hello!"
+        }
+      ]
+    }'
+```
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+```python Python
+from openai import OpenAI
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+client = OpenAI(
+    api_key="$DEEPINFRA_TOKEN",
+    base_url="https://api.deepinfra.com/v1/openai",
+)
 
-### Step 3: Go live
+response = client.chat.completions.create(
+    model="meta-llama/Meta-Llama-3-8B-Instruct",
+    messages=[{"role": "user", "content": "Hello!"}],
+)
+print(response.choices[0].message.content)
+```
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+```javascript JavaScript
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  apiKey: "$DEEPINFRA_TOKEN",
+  baseURL: "https://api.deepinfra.com/v1/openai",
+});
+
+const response = await openai.chat.completions.create({
+  model: "meta-llama/Meta-Llama-3-8B-Instruct",
+  messages: [{ role: "user", content: "Hello!" }],
+});
+console.log(response.choices[0].message.content);
+```
+
+</CodeGroup>
+
+The response looks like this:
+
+```json
+{
+    "id": "chatcmpl-guMTxWgpFf",
+    "object": "chat.completion",
+    "created": 1694623155,
+    "model": "meta-llama/Meta-Llama-3-8B-Instruct",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "Hello! It's nice to meet you. Is there something I can help you with?"
+            },
+            "finish_reason": "stop"
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 15,
+        "completion_tokens": 16,
+        "total_tokens": 31,
+        "estimated_cost": 0.0000268
+    }
+}
+```
+
+## That's it
+
+You're using the [OpenAI Chat Completions API](/chat/overview) — the same interface you already know. The only changes are:
+
+- **Base URL**: `https://api.deepinfra.com/v1/openai`
+- **API key**: your DeepInfra token
+- **Model**: any model from [our catalog](https://deepinfra.com/models)
+
+The official OpenAI Python and Node.js libraries work out of the box.
+
+## Install the SDK (optional)
+
+<CodeGroup>
+
+```bash Python
+pip install openai
+```
+
+```bash JavaScript
+npm install openai
+```
+
+</CodeGroup>
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Chat Completions" icon="comments" href="/chat/overview">
+    Learn about the full chat completions API.
+  </Card>
+  <Card title="Streaming" icon="wave-pulse" href="/chat/streaming">
+    Stream responses token by token.
+  </Card>
+  <Card title="Tool Calling" icon="wrench" href="/chat/tool-calling">
+    Give models access to external functions.
+  </Card>
+  <Card title="Model Catalog" icon="brain" href="/models">
+    Browse 100+ available models.
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

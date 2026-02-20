@@ -1,0 +1,94 @@
+---
+title: Image Generation
+description: Generate images from text prompts using the OpenAI-compatible images API.
+icon: image
+---
+
+DeepInfra supports the OpenAI-compatible image generation API. The default model is FLUX Schnell.
+
+The endpoint is:
+
+```
+POST https://api.deepinfra.com/v1/openai/images/generations
+```
+
+Browse [all text-to-image models](https://deepinfra.com/models/text-to-image).
+
+## Example
+
+<CodeGroup>
+
+```python Python
+import io
+import base64
+from PIL import Image
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="$DEEPINFRA_TOKEN",
+    base_url="https://api.deepinfra.com/v1/openai"
+)
+
+response = client.images.generate(
+    prompt="A photo of an astronaut riding a horse on Mars.",
+    size="1024x1024",
+    n=1,
+)
+
+b64_json = response.data[0].b64_json
+image_bytes = base64.b64decode(b64_json)
+image = Image.open(io.BytesIO(image_bytes))
+image.save("output.png")
+```
+
+```javascript JavaScript
+import * as fs from "fs";
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  baseURL: "https://api.deepinfra.com/v1/openai",
+  apiKey: "$DEEPINFRA_TOKEN",
+});
+
+const response = await openai.images.generate({
+  prompt: "A photo of an astronaut riding a horse on Mars.",
+  size: "1024x1024",
+  n: 1,
+});
+
+const b64Json = response.data[0].b64_json;
+const imageBuffer = Buffer.from(b64Json, "base64");
+fs.writeFileSync("output.png", imageBuffer);
+```
+
+```bash cURL
+curl "https://api.deepinfra.com/v1/openai/images/generations" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -d '{
+    "prompt": "A photo of an astronaut riding a horse on Mars.",
+    "size": "1024x1024",
+    "n": 1
+  }'
+```
+
+</CodeGroup>
+
+## Supported parameters
+
+| Parameter | Notes |
+|-----------|-------|
+| `prompt` | Text description of the image |
+| `model` | Defaults to FLUX Schnell |
+| `size` | Image dimensions (e.g., `"1024x1024"`) |
+| `n` | Number of images to generate |
+| `response_format` | Only `b64_json` supported |
+| `quality`, `style` | Available for compatibility only |
+
+## LoRA image adapters
+
+You can also use custom LoRA adapters for image generation — see [LoRA for Image Generation](/private-models/lora-image).
+
+## Tutorial
+
+For a deeper example including advanced options, see the [Stable Diffusion tutorial](/tutorials/stable-diffusion).
