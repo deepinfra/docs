@@ -1,0 +1,58 @@
+---
+title: Text to Speech
+description: Convert text to natural-sounding audio using TTS models.
+icon: volume-high
+---
+
+DeepInfra hosts text-to-speech models that convert text into natural-sounding audio. Browse [all TTS models](https://deepinfra.com/models/text-to-speech).
+
+## Endpoint
+
+```
+POST https://api.deepinfra.com/v1/inference/{model_name}
+```
+
+## Example
+
+<CodeGroup>
+
+```python Python
+import requests
+
+DEEPINFRA_TOKEN = "$DEEPINFRA_TOKEN"
+MODEL = "hexgrad/Kokoro-82M"
+
+response = requests.post(
+    f"https://api.deepinfra.com/v1/inference/{MODEL}",
+    headers={
+        "Authorization": f"Bearer {DEEPINFRA_TOKEN}",
+        "Content-Type": "application/json",
+    },
+    json={
+        "text": "Hello! This is a text-to-speech example using DeepInfra.",
+    },
+)
+
+# Save the returned audio
+with open("output.wav", "wb") as f:
+    f.write(response.content)
+```
+
+```bash cURL
+curl -X POST \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Hello! This is a text-to-speech example using DeepInfra."}' \
+  'https://api.deepinfra.com/v1/inference/hexgrad/Kokoro-82M' \
+  --output output.wav
+```
+
+</CodeGroup>
+
+## Additional parameters
+
+Each model may expose additional parameters such as voice selection, speed, and language. Check the model's individual [API documentation page](https://deepinfra.com/models/text-to-speech) for supported options.
+
+## Available models
+
+Browse [all text-to-speech models](https://deepinfra.com/models/text-to-speech).

@@ -1,6 +1,6 @@
 ---
 title: Custom LLMs
-description: Deploy your own LLM on dedicated A100/H100/H200/B200 GPUs with autoscaling and an OpenAI-compatible endpoint.
+description: Deploy your own LLM on dedicated A100/H100/H200/B200/B300 GPUs with autoscaling and an OpenAI-compatible endpoint.
 icon: robot
 ---
 
@@ -26,7 +26,7 @@ A deployment has fixed parameters:
 | Parameter | Description |
 |-----------|-------------|
 | `model_name` | Name used for inference calls |
-| `gpu` | `A100-80GB` or `H100-80GB` (more options available) |
+| `gpu` | `A100-80GB`, `H100-80GB`, `H200-141GB`, `B200-180GB`, `B300-288GB` (and more) |
 | `num_gpus` | Number of GPUs (model weights must fit with room for KV cache) |
 | `max_batch_size` | Max parallel requests; additional requests are queued |
 | `weights` | Hugging Face repo (public or private) |

@@ -4,7 +4,9 @@ description: Let models call external functions — the foundation of AI agents.
 icon: wrench
 ---
 
-Tool calling (also known as function calling) allows models to invoke external functions you define, use the results, and generate a comprehensive response. This is the core building block of AI agents.
+Tool calling (also known as function calling) is the most important capability for building AI agents. It lets models decide when to invoke external tools — web search, code execution, database queries, API calls — and seamlessly weave the results into a final response. Without reliable tool calling, agentic systems break down.
+
+**Tool call accuracy is a top priority for us.** We invest significant engineering effort in ensuring that function call parsing, argument extraction, and round-trip reliability are correct across all supported models. In third-party benchmarks like the [K2-Vendor-Verifier evaluation](https://github.com/MoonshotAI/K2-Vendor-Verifier?tab=readme-ov-file#k2-0905-evaluation-results), DeepInfra achieves a top accuracy score for `moonshotai/Kimi-K2-Instruct` — among the highest of any provider tested.
 
 We provide an OpenAI-compatible tool calling API. For more background, see the [DeepInfra blog](/blog/function-calling-feature).
 

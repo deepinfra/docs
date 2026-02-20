@@ -6,9 +6,16 @@ icon: brackets-curly
 
 In addition to text, the DeepInfra API can return responses in JSON format. This is supported in both our inference API and our OpenAI-compatible API, across [many of our models](https://deepinfra.com/models?q=json).
 
-To activate JSON mode, add `response_format: {"type": "json_object"}` to your request.
+There are two modes:
 
-## Example
+| Mode | How to use | When to use |
+|------|-----------|-------------|
+| `json_object` | `{"type": "json_object"}` | Any valid JSON object, schema-free |
+| `json_schema` | `{"type": "json_schema", "json_schema": {...}}` | Enforces a strict output schema |
+
+## json_object mode
+
+The simplest way to get JSON output. The model returns a valid JSON object but you don't control the exact shape.
 
 <CodeGroup>
 
@@ -32,7 +39,6 @@ response = client.chat.completions.create(
     model="deepseek-ai/DeepSeek-V3",
     messages=messages,
     response_format={"type": "json_object"},
-    tool_choice="auto",
 )
 
 print(response.choices[0].message.content)
@@ -56,35 +62,98 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
 
 </CodeGroup>
 
-The `response.choices[0].message.content` will contain a JSON string:
+## json_schema mode
+
+Enforces a strict output schema using [JSON Schema](https://json-schema.org/). The model is constrained to produce only values that match your schema — useful when downstream code depends on a fixed structure.
+
+<CodeGroup>
+
+```python Python
+import openai
+import json
+
+client = openai.OpenAI(
+    base_url="https://api.deepinfra.com/v1/openai",
+    api_key="$DEEPINFRA_TOKEN",
+)
+
+response = client.chat.completions.create(
+    model="deepseek-ai/DeepSeek-V3",
+    messages=[
+        {
+            "role": "user",
+            "content": "Extract the name, country, and year from: 'Alexander Fleming discovered Penicillin in the UK in 1928.'"
+        }
+    ],
+    response_format={
+        "type": "json_schema",
+        "json_schema": {
+            "name": "breakthrough",
+            "strict": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "country": {"type": "string"},
+                    "year": {"type": "integer"}
+                },
+                "required": ["name", "country", "year"],
+                "additionalProperties": False
+            }
+        }
+    }
+)
+
+print(json.loads(response.choices[0].message.content))
+```
+
+```bash cURL
+curl "https://api.deepinfra.com/v1/openai/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -d '{
+      "model": "deepseek-ai/DeepSeek-V3",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Extract the name, country, and year from: '\''Alexander Fleming discovered Penicillin in the UK in 1928.'\''"
+        }
+      ],
+      "response_format": {
+        "type": "json_schema",
+        "json_schema": {
+          "name": "breakthrough",
+          "strict": true,
+          "schema": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "country": {"type": "string"},
+              "year": {"type": "integer"}
+            },
+            "required": ["name", "country", "year"],
+            "additionalProperties": false
+          }
+        }
+      }
+    }'
+```
+
+</CodeGroup>
+
+Output:
 
 ```json
-{
-  "breakthroughs": [
-    {
-      "name": "Penicillin",
-      "country": "UK",
-      "year": 1928
-    },
-    {
-      "name": "The Double Helix Structure of DNA",
-      "country": "US",
-      "year": 1953
-    },
-    {
-      "name": "Artificial Heart",
-      "country": "US",
-      "year": 2008
-    }
-  ]
-}
+{"name": "Penicillin", "country": "UK", "year": 1928}
 ```
 
 ## Tips
 
-**Always prompt the model to produce JSON.** While not strictly required, failing to mention JSON in your prompt can occasionally produce inconsistent output. Example: *"Respond with a JSON object containing..."*
+**Always prompt the model to produce JSON.** While not strictly required for `json_object`, mentioning the expected format in your prompt improves consistency.
 
-**Watch for truncation.** If the model stops due to `max_tokens` or `length`, the JSON may be incomplete (e.g., missing closing braces). Always validate the output before parsing.
+**Prefer `json_schema` for production.** When your code depends on specific field names or types, `json_schema` with `"strict": true` eliminates shape surprises.
+
+**Watch for truncation.** If the model stops due to `max_tokens` or `length`, the JSON may be incomplete. Always validate before parsing.
 
 ## Caveats
 
@@ -99,7 +168,3 @@ The `response.choices[0].message.content` will contain a JSON string:
 - Keep prompts specific about the expected schema
 - Validate model output before using it in production systems
 - Use lower temperatures (< 0.7) for more consistent structure
-
-## Learn more
-
-For a deeper dive into JSON mode behavior, see the [DeepInfra blog](/blog/json-mode).

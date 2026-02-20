@@ -43,8 +43,8 @@
             "pages": [
               "chat/overview",
               "chat/streaming",
-              "chat/structured-outputs",
               "chat/tool-calling",
+              "chat/structured-outputs",
               "chat/vision",
               "chat/prompt-caching",
               "chat/log-probs"
@@ -55,8 +55,11 @@
             "pages": [
               "apis/completions",
               "apis/embeddings",
+              "apis/reranker",
               "apis/image-generation",
+              "apis/text-to-video",
               "apis/speech",
+              "apis/text-to-speech",
               "apis/deepinfra-native"
             ]
           },
@@ -70,7 +73,7 @@
             ]
           },
           {
-            "group": "GPU Instances",
+            "group": "GPU Clusters",
             "pages": [
               "gpu-instances/overview"
             ]

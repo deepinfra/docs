@@ -1,0 +1,106 @@
+---
+title: Reranking
+description: Rerank a list of documents by relevance to a query.
+icon: arrow-up-wide-short
+---
+
+Reranker models take a query and a list of candidate documents and return a relevance score for each document. They're typically used as a second-pass filter after an initial vector search to improve retrieval quality in RAG pipelines.
+
+Browse [all reranker models](https://deepinfra.com/models/reranker).
+
+## Endpoint
+
+```
+POST https://api.deepinfra.com/v1/inference/{model_name}
+```
+
+## Example
+
+<CodeGroup>
+
+```python Python
+import requests
+
+DEEPINFRA_TOKEN = "$DEEPINFRA_TOKEN"
+MODEL = "cross-encoder/ms-marco-MiniLM-L-12-v2"
+
+response = requests.post(
+    f"https://api.deepinfra.com/v1/inference/{MODEL}",
+    headers={
+        "Authorization": f"Bearer {DEEPINFRA_TOKEN}",
+        "Content-Type": "application/json",
+    },
+    json={
+        "query": "What is the capital of France?",
+        "documents": [
+            "Paris is the capital and most populous city of France.",
+            "Berlin is the capital of Germany.",
+            "The Eiffel Tower is located in Paris.",
+            "France is a country in Western Europe.",
+        ],
+    },
+)
+
+result = response.json()
+for item in result["scores"]:
+    print(item)
+```
+
+```bash cURL
+curl -X POST \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What is the capital of France?",
+    "documents": [
+      "Paris is the capital and most populous city of France.",
+      "Berlin is the capital of Germany.",
+      "The Eiffel Tower is located in Paris.",
+      "France is a country in Western Europe."
+    ]
+  }' \
+  'https://api.deepinfra.com/v1/inference/cross-encoder/ms-marco-MiniLM-L-12-v2'
+```
+
+</CodeGroup>
+
+## Response
+
+```json
+{
+  "scores": [0.98, 0.02, 0.45, 0.31]
+}
+```
+
+Scores are relevance probabilities in the range [0, 1], in the same order as the input documents. Sort by score descending to get the most relevant documents first.
+
+## Usage in a RAG pipeline
+
+A typical pattern:
+
+1. **Retrieve** — run a vector similarity search to fetch the top-N candidate chunks (e.g. top 50)
+2. **Rerank** — pass the query + candidates to a reranker to get relevance scores
+3. **Select** — keep only the top-K highest-scoring chunks (e.g. top 5) for the LLM context
+
+This two-stage approach improves precision significantly compared to embedding similarity alone.
+
+```python
+# 1. Get initial candidates from your vector DB
+candidates = vector_db.search(query, top_k=50)
+
+# 2. Rerank
+response = requests.post(
+    "https://api.deepinfra.com/v1/inference/cross-encoder/ms-marco-MiniLM-L-12-v2",
+    headers={"Authorization": f"Bearer {DEEPINFRA_TOKEN}", "Content-Type": "application/json"},
+    json={"query": query, "documents": [c["text"] for c in candidates]},
+)
+scores = response.json()["scores"]
+
+# 3. Select top-K
+ranked = sorted(zip(scores, candidates), reverse=True)
+top_chunks = [doc for _, doc in ranked[:5]]
+```
+
+## Available models
+
+Browse [all reranker models](https://deepinfra.com/models/reranker).

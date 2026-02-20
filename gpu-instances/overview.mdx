@@ -1,26 +1,32 @@
 ---
-title: GPU Instances
-description: Rent bare-metal GPU instances with SSH access — B200, H200, and more.
+title: GPU Clusters
+description: Rent dedicated B200 and B300 GPU clusters with SSH access for training, fine-tuning, and custom workloads.
 icon: server
 ---
 
-GPU Instances provide on-demand access to high-performance GPU compute in the cloud. You get a dedicated container with SSH access and full control over your environment.
+DeepInfra GPU Clusters give you dedicated access to NVIDIA B200 and B300 hardware — the most powerful GPUs available. You get a container with SSH access and full control over your environment, billed by the hour.
+
+## Available GPUs
+
+| GPU | Memory | Best for |
+|-----|--------|----------|
+| **B200-180GB** | 180GB HBM3e | Large-scale inference, fine-tuning, training |
+| **B300-288GB** | 288GB HBM3e | Largest models, maximum throughput, multi-node training |
 
 ## Key features
 
-- **Dedicated GPU access** — no sharing with other users
+- **Dedicated access** — no sharing with other users
 - **SSH access** — connect directly to your container
-- **Flexible GPU configs** — B200, H200, H100, A100, and more
+- **Full environment control** — bring your own Docker image or use ours
 - **Pay-per-use** — billed by the hour, only while running
 - **Quick setup** — running in minutes
 
 ## Use cases
 
 - LLM training and fine-tuning
-- GPU-accelerated inference workloads
-- Data processing and analysis
-- Development and testing of GPU applications
+- Large-scale batch inference
 - Research and experimentation
+- Development environments with GPU access
 
 ## Web UI
 
@@ -28,8 +34,8 @@ GPU Instances provide on-demand access to high-performance GPU compute in the cl
 
 1. Go to [Dashboard → Instances](https://deepinfra.com/dash/instances)
 2. Click **New Container**
-3. **Select GPU configuration** — choose from available GPU types. Each shows:
-   - GPU type, quantity, and memory (e.g., `1xB200-180GB`, `8xH200-141GB`)
+3. **Select GPU configuration** — choose from available B200/B300 configs. Each shows:
+   - GPU type, quantity, and memory (e.g., `1xB200-180GB`, `8xB300-288GB`)
    - Hourly pricing
    - Availability status
 4. **Enter container details**:
@@ -63,7 +69,7 @@ curl -X POST https://api.deepinfra.com/v1/containers \
   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "my-container",
+    "name": "my-cluster",
     "gpu_config": "8xB200-180GB",
     "container_image": "di-cont-ubuntu-torch:latest",
     "cloud_init_user_data": "#cloud-config\nusers:\n- name: ubuntu\n  shell: /bin/bash\n  sudo: '\''ALL=(ALL) NOPASSWD:ALL'\''\n  ssh_authorized_keys:\n  - ssh-rsa AAAAB3NzaC1yc2E..."

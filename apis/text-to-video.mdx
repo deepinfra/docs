@@ -1,0 +1,64 @@
+---
+title: Text to Video
+description: Generate video clips from text prompts.
+icon: film
+---
+
+DeepInfra hosts text-to-video models that generate short video clips from a text description. Browse [all text-to-video models](https://deepinfra.com/models/text-to-video).
+
+## Endpoint
+
+```
+POST https://api.deepinfra.com/v1/inference/{model_name}
+```
+
+## Example
+
+<CodeGroup>
+
+```python Python
+import requests
+
+DEEPINFRA_TOKEN = "$DEEPINFRA_TOKEN"
+MODEL = "Wan-AI/Wan2.1-T2V-14B"
+
+response = requests.post(
+    f"https://api.deepinfra.com/v1/inference/{MODEL}",
+    headers={
+        "Authorization": f"Bearer {DEEPINFRA_TOKEN}",
+        "Content-Type": "application/json",
+    },
+    json={
+        "prompt": "A serene mountain lake at sunrise, with mist rising from the water and pine trees reflected on the surface.",
+    },
+)
+
+result = response.json()
+# result["video"] contains the URL to the generated video
+print(result["video"])
+```
+
+```bash cURL
+curl -X POST \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "A serene mountain lake at sunrise, with mist rising from the water and pine trees reflected on the surface."}' \
+  'https://api.deepinfra.com/v1/inference/Wan-AI/Wan2.1-T2V-14B'
+```
+
+</CodeGroup>
+
+## Tips for good prompts
+
+- Be descriptive about the scene, lighting, and motion
+- Specify the camera movement if relevant (e.g. "slow pan", "aerial shot", "close-up")
+- Keep prompts focused — overly complex prompts can produce inconsistent results
+- Use the [negative prompt](https://deepinfra.com/models/text-to-video) parameter (if supported) to exclude unwanted elements
+
+## Async inference
+
+Video generation is compute-intensive and may take longer than text inference. Consider using [webhooks](/account/webhooks) to receive the result asynchronously rather than polling.
+
+## Available models
+
+Browse [all text-to-video models](https://deepinfra.com/models/text-to-video).

@@ -12,12 +12,14 @@ DeepInfra allows you to deploy your own models on dedicated infrastructure — y
 - **Custom weights** — deploy fine-tuned or trained-from-scratch models
 - **Predictable latency** — no sharing with other users means consistent response times
 - **Autoscaling** — scale from 0 to many instances automatically based on load
+- **Competitive GPU pricing** — some of the lowest per-GPU-hour rates available, with no lock-in
+- **Simple deployment** — up and running in just a couple of clicks from the dashboard
 
 ## What you can deploy
 
 <CardGroup cols={2}>
   <Card title="Custom LLMs" icon="robot" href="/private-models/custom-llms">
-    Deploy any Hugging Face LLM on A100/H100/H200/B200 GPUs with the OpenAI-compatible API.
+    Deploy any Hugging Face LLM on A100/H100/H200/B200/B300 GPUs with the OpenAI-compatible API.
   </Card>
   <Card title="LoRA Adapters" icon="sliders" href="/private-models/lora">
     Deploy LoRA fine-tuned language models on top of supported base models.
@@ -31,10 +33,11 @@ DeepInfra allows you to deploy your own models on dedicated infrastructure — y
 
 Private model deployments run on:
 
-- **A100-80GB** — proven workhorse for LLM inference
-- **H100-80GB** — latest NVIDIA flagship, 2x faster than A100 for many workloads
-- **H200** — H100 with 141GB HBM3e memory, ideal for large models
-- **B200** — next-generation Blackwell GPU
+- **A100-80GB** — proven workhorse for LLM inference, great value
+- **H100-80GB** — fast and widely supported
+- **H200-141GB** — large HBM3e memory, ideal for big models
+- **B200-180GB** — NVIDIA Blackwell, significantly faster for inference workloads
+- **B300-288GB** — latest NVIDIA Blackwell Ultra, highest performance available
 
 ## Pricing model
 
