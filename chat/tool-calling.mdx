@@ -92,7 +92,7 @@ tools = [{
 messages = [{"role": "user", "content": "What is the weather in San Francisco?"}]
 
 response = client.chat.completions.create(
-    model="meta-llama/Meta-Llama-3.1-70B-Instruct",
+    model="deepseek-ai/DeepSeek-V3",
     messages=messages,
     tools=tools,
     tool_choice="auto",
@@ -124,7 +124,7 @@ const tools = [{
 const messages = [{"role": "user", "content": "What is the weather in San Francisco?"}];
 
 const response = await client.chat.completions.create({
-  model: "meta-llama/Meta-Llama-3.1-70B-Instruct",
+  model: "deepseek-ai/DeepSeek-V3",
   messages: messages,
   tools: tools,
   tool_choice: "auto",
@@ -168,7 +168,7 @@ for tool_call in tool_calls:
 
 # Get a new response from the model with function results
 second_response = client.chat.completions.create(
-    model="meta-llama/Meta-Llama-3.1-70B-Instruct",
+    model="deepseek-ai/DeepSeek-V3",
     messages=messages,
     tools=tools,
     tool_choice="auto",
@@ -197,7 +197,7 @@ for (const tool_call of tool_calls) {
 }
 
 const second_response = await client.chat.completions.create({
-  model: "meta-llama/Meta-Llama-3.1-70B-Instruct",
+  model: "deepseek-ai/DeepSeek-V3",
   messages: messages,
   tools: tools,
   tool_choice: "auto",

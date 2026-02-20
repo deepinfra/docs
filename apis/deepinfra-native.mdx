@@ -26,7 +26,7 @@ npm install deepinfra
 import { TextGeneration } from "deepinfra";
 
 const client = new TextGeneration(
-  "https://api.deepinfra.com/v1/inference/meta-llama/Meta-Llama-3-8B-Instruct",
+  "https://api.deepinfra.com/v1/inference/deepseek-ai/DeepSeek-V3",
   "$DEEPINFRA_TOKEN"
 );
 
@@ -40,7 +40,7 @@ console.log(res.inference_status.tokens_input, res.inference_status.tokens_gener
 ```
 
 ```bash
-curl "https://api.deepinfra.com/v1/inference/meta-llama/Meta-Llama-3-8B-Instruct" \
+curl "https://api.deepinfra.com/v1/inference/deepseek-ai/DeepSeek-V3" \
    -H "Content-Type: application/json" \
    -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
    -d '{
@@ -55,7 +55,7 @@ curl "https://api.deepinfra.com/v1/inference/meta-llama/Meta-Llama-3-8B-Instruct
 ```javascript
 import { Embeddings } from "deepinfra";
 
-const client = new Embeddings("BAAI/bge-large-en-v1.5", "$DEEPINFRA_TOKEN");
+const client = new Embeddings("Qwen/Qwen3-Embedding-8B", "$DEEPINFRA_TOKEN");
 const output = await client.generate({
   inputs: [
     "What is the capital of France?",
@@ -69,7 +69,7 @@ console.log(output.embeddings[0]);
 curl -X POST \
     -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
     -F 'inputs=["I like chocolate"]' \
-    'https://api.deepinfra.com/v1/inference/BAAI/bge-large-en-v1.5'
+    'https://api.deepinfra.com/v1/inference/Qwen/Qwen3-Embedding-8B'
 ```
 
 ## Image Generation

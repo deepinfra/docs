@@ -35,7 +35,7 @@ from langchain.chains import LLMChain
 
 os.environ["DEEPINFRA_API_TOKEN"] = "<your DeepInfra API token>"
 
-llm = DeepInfra(model_id="meta-llama/Meta-Llama-3-8B-Instruct")
+llm = DeepInfra(model_id="deepseek-ai/DeepSeek-V3")
 llm.model_kwargs = {
     "temperature": 0.7,
     "repetition_penalty": 1.2,
@@ -74,12 +74,12 @@ messages = [
 ]
 
 # Synchronous
-chat = ChatDeepInfra(model="meta-llama/Meta-Llama-3-8B-Instruct")
+chat = ChatDeepInfra(model="deepseek-ai/DeepSeek-V3")
 print(chat.invoke(messages))
 
 # Async
 async def async_example():
-    chat = ChatDeepInfra(model="meta-llama/Meta-Llama-3-8B-Instruct")
+    chat = ChatDeepInfra(model="deepseek-ai/DeepSeek-V3")
     await chat.agenerate([messages])
 
 # Streaming
@@ -100,7 +100,7 @@ from langchain_community.embeddings import DeepInfraEmbeddings
 os.environ["DEEPINFRA_API_TOKEN"] = "<your DeepInfra API token>"
 
 embeddings = DeepInfraEmbeddings(
-    model_id="sentence-transformers/clip-ViT-B-32",
+    model_id="Qwen/Qwen3-Embedding-8B",
     query_instruction="",
     embed_instruction="",
 )

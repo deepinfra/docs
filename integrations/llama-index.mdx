@@ -21,7 +21,7 @@ from llama_index.llms.deepinfra import DeepInfraLLM
 import asyncio
 
 llm = DeepInfraLLM(
-    model="mistralai/Mixtral-8x22B-Instruct-v0.1",
+    model="deepseek-ai/DeepSeek-V3",
     api_key="$DEEPINFRA_TOKEN",
     temperature=0.5,
     max_tokens=50,
@@ -112,7 +112,7 @@ from llama_index.embeddings.deepinfra import DeepInfraEmbeddingModel
 _ = load_dotenv(find_dotenv())
 
 model = DeepInfraEmbeddingModel(
-    model_id="BAAI/bge-large-en-v1.5",
+    model_id="Qwen/Qwen3-Embedding-8B",
     api_token="$DEEPINFRA_TOKEN",
     normalize=True,
     text_prefix="text: ",

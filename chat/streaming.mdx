@@ -19,7 +19,7 @@ openai = OpenAI(
 )
 
 stream = openai.chat.completions.create(
-    model="meta-llama/Meta-Llama-3-8B-Instruct",
+    model="deepseek-ai/DeepSeek-V3",
     messages=[{"role": "user", "content": "Hello"}],
     stream=True,
 )
@@ -43,7 +43,7 @@ const openai = new OpenAI({
 
 const completion = await openai.chat.completions.create({
   messages: [{ role: "user", content: "Hello" }],
-  model: "meta-llama/Meta-Llama-3-8B-Instruct",
+  model: "deepseek-ai/DeepSeek-V3",
   stream: true,
 });
 
@@ -63,7 +63,7 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
   -d '{
-      "model": "meta-llama/Meta-Llama-3-8B-Instruct",
+      "model": "deepseek-ai/DeepSeek-V3",
       "stream": true,
       "messages": [
         {

@@ -25,7 +25,7 @@ import { generateText } from "ai";
 const deepinfra = createDeepInfra({ apiKey: "$DEEPINFRA_TOKEN" });
 
 const { text, usage, finishReason } = await generateText({
-  model: deepinfra("meta-llama/Llama-3.3-70B-Instruct-Turbo"),
+  model: deepinfra("deepseek-ai/DeepSeek-V3"),
   prompt: "Write a vegetarian lasagna recipe for 4 people.",
 });
 
@@ -36,7 +36,7 @@ With a system message:
 
 ```javascript
 const { text } = await generateText({
-  model: deepinfra("meta-llama/Llama-3.3-70B-Instruct-Turbo"),
+  model: deepinfra("deepseek-ai/DeepSeek-V3"),
   prompt: "Write a vegetarian lasagna recipe for 4 people.",
   system: "You are a professional writer. You write simple, clear, and concise content.",
 });
@@ -51,7 +51,7 @@ import { streamText } from "ai";
 const deepinfra = createDeepInfra({ apiKey: "$DEEPINFRA_TOKEN" });
 
 const result = streamText({
-  model: deepinfra("meta-llama/Llama-3.3-70B-Instruct-Turbo"),
+  model: deepinfra("deepseek-ai/DeepSeek-V3"),
   prompt: "Invent a new holiday and describe its traditions.",
   system: "You are a professional writer. You write simple, clear, and concise content.",
 });
@@ -65,7 +65,7 @@ for await (const textPart of result.textStream) {
 
 ```javascript
 const { text } = await generateText({
-  model: deepinfra("meta-llama/Llama-3.3-70B-Instruct-Turbo"),
+  model: deepinfra("deepseek-ai/DeepSeek-V3"),
   messages: [
     { role: "system", content: "Respond like a michelin starred chef." },
     { role: "user", content: "Can you name at least two different techniques to cook lamb?" },
@@ -89,7 +89,7 @@ import { z } from "zod";
 const deepinfra = createDeepInfra({ apiKey: "$DEEPINFRA_TOKEN" });
 
 const { object } = await generateObject({
-  model: deepinfra("meta-llama/Llama-3.3-70B-Instruct-Turbo"),
+  model: deepinfra("deepseek-ai/DeepSeek-V3"),
   schema: z.object({
     recipe: z.object({
       name: z.string(),
@@ -107,7 +107,7 @@ Enum output:
 
 ```javascript
 const { object } = await generateObject({
-  model: deepinfra("meta-llama/Llama-3.3-70B-Instruct-Turbo"),
+  model: deepinfra("deepseek-ai/DeepSeek-V3"),
   output: "enum",
   enum: ["action", "comedy", "drama", "horror", "sci-fi"],
   prompt: 'Classify: "A group of astronauts travel through a wormhole..."',
@@ -124,7 +124,7 @@ import { z } from "zod";
 const deepinfra = createDeepInfra({ apiKey: "$DEEPINFRA_TOKEN" });
 
 const result = await generateText({
-  model: deepinfra("meta-llama/Llama-3.3-70B-Instruct-Turbo"),
+  model: deepinfra("deepseek-ai/DeepSeek-V3"),
   tools: {
     weather: tool({
       description: "Get the weather in a location",

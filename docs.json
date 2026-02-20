@@ -16,7 +16,7 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:support@deepinfra.com"
+        "href": "mailto:feedback@deepinfra.com"
       }
     ],
     "primary": {
@@ -140,7 +140,7 @@
     "socials": {
       "x": "https://x.com/deepinfra",
       "github": "https://github.com/deepinfra",
-      "linkedin": "https://linkedin.com/company/deepinfra"
+      "linkedin": "https://www.linkedin.com/company/deep-infra/"
     }
   }
 }

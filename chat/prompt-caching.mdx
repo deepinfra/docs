@@ -32,7 +32,7 @@ SYSTEM_PROMPT = """You are a helpful AI assistant with deep expertise in Python.
 
 # First request — full processing
 response1 = client.chat.completions.create(
-    model="meta-llama/Meta-Llama-3.1-70B-Instruct",
+    model="deepseek-ai/DeepSeek-V3",
     messages=[
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": "How do I use list comprehensions?"},
@@ -41,7 +41,7 @@ response1 = client.chat.completions.create(
 
 # Second request — cached prefix reused, faster and cheaper
 response2 = client.chat.completions.create(
-    model="meta-llama/Meta-Llama-3.1-70B-Instruct",
+    model="deepseek-ai/DeepSeek-V3",
     messages=[
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": "What are Python generators?"},

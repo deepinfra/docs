@@ -18,7 +18,7 @@ POST https://api.deepinfra.com/v1/openai/completions
 
 ## Example
 
-The example below uses `meta-llama/Meta-Llama-3-8B-Instruct` with its Llama 3 prompt format:
+The example below uses `deepseek-ai/DeepSeek-V3` with its prompt format:
 
 <CodeGroup>
 
@@ -33,9 +33,9 @@ openai = OpenAI(
 stream = True  # or False
 
 completion = openai.completions.create(
-    model="meta-llama/Meta-Llama-3-8B-Instruct",
-    prompt="<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\nHello!<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n",
-    stop=["<|eot_id|>"],
+    model="deepseek-ai/DeepSeek-V3",
+    prompt="<｜begin▁of▁sentence｜><｜User｜>Hello!<｜Assistant｜>",
+    stop=["<｜end▁of▁sentence｜>"],
     stream=stream,
 )
 
@@ -63,10 +63,10 @@ const openai = new OpenAI({
 const stream = true; // or false
 
 const completion = await openai.completions.create({
-  model: "meta-llama/Meta-Llama-3-8B-Instruct",
-  prompt: "<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\nHello!<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n",
+  model: "deepseek-ai/DeepSeek-V3",
+  prompt: "<｜begin▁of▁sentence｜><｜User｜>Hello!<｜Assistant｜>",
   stream: stream,
-  stop: ["<|eot_id|>"]
+  stop: ["<｜end▁of▁sentence｜>"]
 });
 
 if (stream) {
@@ -90,10 +90,10 @@ curl "https://api.deepinfra.com/v1/openai/completions" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
   -d '{
-     "model": "meta-llama/Meta-Llama-3-8B-Instruct",
-     "prompt": "<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\nHello!<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n",
+     "model": "deepseek-ai/DeepSeek-V3",
+     "prompt": "<｜begin▁of▁sentence｜><｜User｜>Hello!<｜Assistant｜>",
      "stop": [
-       "<|eot_id|>"
+       "<｜end▁of▁sentence｜>"
      ]
    }'
 ```

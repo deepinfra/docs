@@ -20,7 +20,7 @@ Add a `webhook` parameter to your request. The API immediately responds with sta
 import { TextGeneration } from "deepinfra";
 
 const client = new TextGeneration(
-  "https://api.deepinfra.com/v1/inference/meta-llama/Meta-Llama-3-8B-Instruct",
+  "https://api.deepinfra.com/v1/inference/deepseek-ai/DeepSeek-V3",
   "$DEEPINFRA_TOKEN"
 );
 
@@ -34,7 +34,7 @@ console.log(res.inference_status.status); // "queued"
 ```
 
 ```bash cURL
-curl "https://api.deepinfra.com/v1/inference/meta-llama/Meta-Llama-3-8B-Instruct" \
+curl "https://api.deepinfra.com/v1/inference/deepseek-ai/DeepSeek-V3" \
    -H "Content-Type: application/json" \
    -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
    -d '{
@@ -49,7 +49,7 @@ curl "https://api.deepinfra.com/v1/inference/meta-llama/Meta-Llama-3-8B-Instruct
 ## Embeddings example
 
 ```bash
-curl "https://api.deepinfra.com/v1/inference/BAAI/bge-large-en-v1.5" \
+curl "https://api.deepinfra.com/v1/inference/Qwen/Qwen3-Embedding-8B" \
    -H "Content-Type: application/json" \
    -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
    -d '{

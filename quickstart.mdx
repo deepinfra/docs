@@ -19,7 +19,7 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
   -d '{
-      "model": "meta-llama/Meta-Llama-3-8B-Instruct",
+      "model": "deepseek-ai/DeepSeek-V3",
       "messages": [
         {
           "role": "user",
@@ -38,7 +38,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="meta-llama/Meta-Llama-3-8B-Instruct",
+    model="deepseek-ai/DeepSeek-V3",
     messages=[{"role": "user", "content": "Hello!"}],
 )
 print(response.choices[0].message.content)
@@ -53,7 +53,7 @@ const openai = new OpenAI({
 });
 
 const response = await openai.chat.completions.create({
-  model: "meta-llama/Meta-Llama-3-8B-Instruct",
+  model: "deepseek-ai/DeepSeek-V3",
   messages: [{ role: "user", content: "Hello!" }],
 });
 console.log(response.choices[0].message.content);
@@ -68,7 +68,7 @@ The response looks like this:
     "id": "chatcmpl-guMTxWgpFf",
     "object": "chat.completion",
     "created": 1694623155,
-    "model": "meta-llama/Meta-Llama-3-8B-Instruct",
+    "model": "deepseek-ai/DeepSeek-V3",
     "choices": [
         {
             "index": 0,

@@ -42,7 +42,7 @@ openai = OpenAI(
 )
 
 chat_completion = openai.chat.completions.create(
-    model="meta-llama/Meta-Llama-3-8B-Instruct",
+    model="deepseek-ai/DeepSeek-V3",
     messages=[{"role": "user", "content": "Hello"}],
 )
 
@@ -60,7 +60,7 @@ const openai = new OpenAI({
 
 const completion = await openai.chat.completions.create({
   messages: [{ role: "user", content: "Hello" }],
-  model: "meta-llama/Meta-Llama-3-8B-Instruct",
+  model: "deepseek-ai/DeepSeek-V3",
 });
 
 console.log(completion.choices[0].message.content);
@@ -72,7 +72,7 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
   -d '{
-      "model": "meta-llama/Meta-Llama-3-8B-Instruct",
+      "model": "deepseek-ai/DeepSeek-V3",
       "messages": [
         {
           "role": "user",
@@ -99,7 +99,7 @@ openai = OpenAI(
 )
 
 chat_completion = openai.chat.completions.create(
-    model="meta-llama/Meta-Llama-3-8B-Instruct",
+    model="deepseek-ai/DeepSeek-V3",
     messages=[
         {"role": "system", "content": "Respond like a michelin starred chef."},
         {"role": "user", "content": "Can you name at least two different techniques to cook lamb?"},
@@ -126,7 +126,7 @@ const completion = await openai.chat.completions.create({
     {role: "assistant", content: "Bonjour! Let me tell you, my friend, cooking lamb is an art form..."},
     {role: "user", content: "Tell me more about the second method."}
   ],
-  model: "meta-llama/Meta-Llama-3-8B-Instruct",
+  model: "deepseek-ai/DeepSeek-V3",
 });
 
 console.log(completion.choices[0].message.content);
@@ -137,7 +137,7 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
   -d '{
-      "model": "meta-llama/Meta-Llama-3-8B-Instruct",
+      "model": "deepseek-ai/DeepSeek-V3",
       "messages": [
         {"role": "system", "content": "Respond like a michelin starred chef."},
         {"role": "user", "content": "Can you name at least two different techniques to cook lamb?"},
