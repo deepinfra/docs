@@ -7,7 +7,7 @@
     "light": "#818CF8",
     "dark": "#4F46E5"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/favicon.png",
   "logo": {
     "light": "/logo/light.svg",
     "dark": "/logo/dark.svg"
@@ -118,7 +118,7 @@
         },
         {
           "anchor": "Discord",
-          "href": "https://discord.gg/deepinfra",
+          "href": "https://discord.com/invite/x88dCvhqYq",
           "icon": "discord"
         }
       ]
