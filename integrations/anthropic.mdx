@@ -1,0 +1,173 @@
+---
+title: Anthropic SDK & Claude Code
+description: Use DeepInfra models with the Anthropic Messages API, Claude Code, and the Anthropic SDK.
+icon: message-bot
+---
+
+DeepInfra exposes an Anthropic-compatible Messages API. This means tools that target the Anthropic API — Claude Code, the Anthropic Python and TypeScript SDKs, and any framework with an Anthropic adapter — can point at DeepInfra and use open-source models.
+
+## Endpoint
+
+```
+https://api.deepinfra.com/anthropic
+```
+
+Two endpoints are available:
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /anthropic/v1/messages` | Create a message (chat completion) |
+| `POST /anthropic/v1/messages/count_tokens` | Count tokens for a message request |
+
+## Authentication
+
+Both standard Anthropic authentication methods are supported:
+
+| Header | Example |
+|--------|---------|
+| `Authorization` | `Bearer $DEEPINFRA_TOKEN` |
+| `x-api-key` | `$DEEPINFRA_TOKEN` |
+
+You can also pass `anthropic-version` and `anthropic-beta` headers as needed.
+
+## Using the Anthropic SDK
+
+<CodeGroup>
+
+```bash Python
+pip install anthropic
+```
+
+```bash JavaScript
+npm install @anthropic-ai/sdk
+```
+
+</CodeGroup>
+
+<CodeGroup>
+
+```python Python
+import anthropic
+
+client = anthropic.Anthropic(
+    base_url="https://api.deepinfra.com/anthropic",
+    api_key="$DEEPINFRA_TOKEN",
+)
+
+message = client.messages.create(
+    model="deepseek-ai/DeepSeek-V3",
+    max_tokens=1024,
+    messages=[
+        {"role": "user", "content": "Hello!"}
+    ],
+)
+
+print(message.content[0].text)
+```
+
+```javascript JavaScript
+import Anthropic from "@anthropic-ai/sdk";
+
+const client = new Anthropic({
+  baseURL: "https://api.deepinfra.com/anthropic",
+  apiKey: "$DEEPINFRA_TOKEN",
+});
+
+const message = await client.messages.create({
+  model: "deepseek-ai/DeepSeek-V3",
+  max_tokens: 1024,
+  messages: [
+    { role: "user", content: "Hello!" },
+  ],
+});
+
+console.log(message.content[0].text);
+```
+
+```bash cURL
+curl "https://api.deepinfra.com/anthropic/v1/messages" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $DEEPINFRA_TOKEN" \
+  -H "anthropic-version: 2023-06-01" \
+  -d '{
+      "model": "deepseek-ai/DeepSeek-V3",
+      "max_tokens": 1024,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Hello!"
+        }
+      ]
+    }'
+```
+
+</CodeGroup>
+
+## Using with Claude Code
+
+Claude Code can use DeepInfra as its backend. To keep your normal Claude Code setup untouched, add a dedicated shell function to your `~/.bashrc` or `~/.zshrc`:
+
+```bash
+deepinfra() {
+  export ANTHROPIC_BASE_URL=https://api.deepinfra.com/anthropic
+  export ANTHROPIC_AUTH_TOKEN=$DEEPINFRA_TOKEN
+  export ANTHROPIC_MODEL=deepseek-ai/DeepSeek-V3.1-Terminus
+  export ANTHROPIC_SMALL_FAST_MODEL=Qwen/Qwen3-30B-A3B
+  export CLAUDE_CODE_MAX_OUTPUT_TOKENS=16384
+  claude "$@"
+}
+```
+
+Then run `deepinfra` instead of `claude` to launch Claude Code via DeepInfra. Your regular `claude` command stays unchanged.
+
+<Note>
+  `ANTHROPIC_SMALL_FAST_MODEL` is used for lightweight tasks like tab completions and commit messages. Pick a fast, cheap model here to keep costs low.
+</Note>
+
+## Streaming
+
+Streaming works the same as the Anthropic API — use `stream=True` (Python) or `stream: true` (JS/cURL):
+
+```python
+with client.messages.stream(
+    model="deepseek-ai/DeepSeek-V3",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Write a short poem about open source."}],
+) as stream:
+    for text in stream.text_stream:
+        print(text, end="", flush=True)
+```
+
+## Token counting
+
+Count the tokens in a message request before sending it:
+
+```bash
+curl "https://api.deepinfra.com/anthropic/v1/messages/count_tokens" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $DEEPINFRA_TOKEN" \
+  -d '{
+      "model": "deepseek-ai/DeepSeek-V3",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Hello, how are you?"
+        }
+      ]
+    }'
+```
+
+## Notes
+
+- You are running open-source models via the Anthropic protocol, not Anthropic's Claude models.
+- Model names use DeepInfra identifiers (e.g. `deepseek-ai/DeepSeek-V3`), not Anthropic model names.
+- Not all Anthropic-specific features may be supported. Standard message creation, streaming, and token counting work as expected.
+
+<CardGroup cols={2}>
+  <Card title="Chat Completions" icon="comments" href="/chat/overview">
+    Use the OpenAI-compatible API instead.
+  </Card>
+  <Card title="Authentication" icon="key" href="/account/authentication">
+    API keys and scoped JWTs.
+  </Card>
+</CardGroup>

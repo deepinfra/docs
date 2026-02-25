@@ -167,10 +167,58 @@ The longer the conversation, the more tokens it uses. The maximum conversation l
 | `frequency_penalty` | |
 | `response_format` | See [Structured Outputs](/chat/structured-outputs) |
 | `tools`, `tool_choice` | See [Tool Calling](/chat/tool-calling) |
+| `service_tier` | Priority inference for tagged models. See [Service Tier](#service-tier) below. |
+| `reasoning_effort` | Controls reasoning depth for reasoning models. See [Reasoning Models](/chat/reasoning). |
 
 <Note>
   We may not be 100% compatible with all OpenAI parameters. Let us know on Discord or by email if something you need is missing.
 </Note>
+
+## Service tier
+
+Set `service_tier` to `"priority"` to request priority inference on supported models. Priority requests get faster time-to-first-token and higher throughput during peak demand.
+
+<Warning>
+  Priority inference incurs a 20% surcharge on top of the model's standard per-token price.
+</Warning>
+
+<CodeGroup>
+
+```python Python
+response = client.chat.completions.create(
+    model="deepseek-ai/DeepSeek-V3",
+    messages=[{"role": "user", "content": "Hello!"}],
+    extra_body={"service_tier": "priority"},
+)
+```
+
+```javascript JavaScript
+const response = await openai.chat.completions.create({
+  model: "deepseek-ai/DeepSeek-V3",
+  messages: [{ role: "user", content: "Hello!" }],
+  service_tier: "priority",
+});
+```
+
+```bash cURL
+curl "https://api.deepinfra.com/v1/openai/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -d '{
+      "model": "deepseek-ai/DeepSeek-V3",
+      "service_tier": "priority",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Hello!"
+        }
+      ]
+    }'
+```
+
+</CodeGroup>
+
+The response includes a `service_tier` field confirming which tier was used. Not all models support priority tiers — check the model page for availability.
 
 ## What's next
 
@@ -186,5 +234,8 @@ The longer the conversation, the more tokens it uses. The maximum conversation l
   </Card>
   <Card title="Vision" icon="eye" href="/chat/vision">
     Send images alongside text.
+  </Card>
+  <Card title="Reasoning Models" icon="brain-circuit" href="/chat/reasoning">
+    Control chain-of-thought reasoning behavior.
   </Card>
 </CardGroup>

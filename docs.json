@@ -47,6 +47,7 @@
               "chat/structured-outputs",
               "chat/vision",
               "chat/prompt-caching",
+              "chat/reasoning",
               "chat/log-probs"
             ]
           },
@@ -79,6 +80,16 @@
             ]
           },
           {
+            "group": "Integrations",
+            "pages": [
+              "integrations/anthropic",
+              "integrations/langchain",
+              "integrations/llama-index",
+              "integrations/ai-sdk",
+              "integrations/autogen"
+            ]
+          },
+          {
             "group": "Account & Security",
             "pages": [
               "account/authentication",
@@ -87,15 +98,6 @@
               "account/okta-sso",
               "account/data-privacy",
               "account/subprocessors"
-            ]
-          },
-          {
-            "group": "Integrations",
-            "pages": [
-              "integrations/langchain",
-              "integrations/llama-index",
-              "integrations/ai-sdk",
-              "integrations/autogen"
             ]
           },
           {

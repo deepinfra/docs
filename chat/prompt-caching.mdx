@@ -86,8 +86,81 @@ The response usage object indicates how many tokens were served from cache:
 
 In this example, 4800 of the 5000 input tokens were cached.
 
+## Explicit cache keys
+
+By default, caching is automatic based on prefix matching. The `prompt_cache_key` parameter lets you explicitly tag a request with a cache key, improving cache hit rates when your prompts share the same logical content but differ slightly in formatting or ordering.
+
+We recommend using a **session-scoped key** like `userid-chatsessionid` (e.g. `"user123-chat456"`). Within a single chat session, the conversation history grows incrementally — each new request reuses all previous turns plus one new message. A per-session cache key ensures these near-identical prompts always hit the cache.
+
+<CodeGroup>
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="$DEEPINFRA_TOKEN",
+    base_url="https://api.deepinfra.com/v1/openai",
+)
+
+response = client.chat.completions.create(
+    model="deepseek-ai/DeepSeek-V3",
+    messages=[
+        {"role": "system", "content": "You are a helpful coding assistant."},
+        {"role": "user", "content": "How do I use async/await?"},
+    ],
+    extra_body={"prompt_cache_key": "user123-chat456"},
+)
+```
+
+```javascript JavaScript
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  apiKey: "$DEEPINFRA_TOKEN",
+  baseURL: "https://api.deepinfra.com/v1/openai",
+});
+
+const response = await openai.chat.completions.create({
+  model: "deepseek-ai/DeepSeek-V3",
+  messages: [
+    { role: "system", content: "You are a helpful coding assistant." },
+    { role: "user", content: "How do I use async/await?" },
+  ],
+  prompt_cache_key: "user123-chat456",
+});
+```
+
+```bash cURL
+curl "https://api.deepinfra.com/v1/openai/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -d '{
+      "model": "deepseek-ai/DeepSeek-V3",
+      "prompt_cache_key": "user123-chat456",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are a helpful coding assistant."
+        },
+        {
+          "role": "user",
+          "content": "How do I use async/await?"
+        }
+      ]
+    }'
+```
+
+</CodeGroup>
+
+Requests with the same `prompt_cache_key` and model will share a KV cache, even if their prompt prefixes aren't byte-for-byte identical.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `prompt_cache_key` | `string` | An explicit key for cache lookup. Requests with the same key and model share a KV cache. |
+
 ## Notes
 
 - Prompt caching is available on supported models — check the model page for details
 - Cache entries expire after a period of inactivity
 - Caches are per-model and per-account
+- When using `prompt_cache_key`, the key is scoped per-model and per-account
