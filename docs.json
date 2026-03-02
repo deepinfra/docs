@@ -22,7 +22,7 @@
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://deepinfra.com/dashboard"
+      "href": "https://deepinfra.com/dash"
     }
   },
   "navigation": {
