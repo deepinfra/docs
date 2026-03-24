@@ -112,7 +112,7 @@ deepinfra() {
   export ANTHROPIC_BASE_URL=https://api.deepinfra.com/anthropic
   export ANTHROPIC_AUTH_TOKEN=$DEEPINFRA_TOKEN
   export ANTHROPIC_MODEL=deepseek-ai/DeepSeek-V3.1-Terminus
-  export ANTHROPIC_SMALL_FAST_MODEL=Qwen/Qwen3-30B-A3B
+  export ANTHROPIC_DEFAULT_HAIKU_MODEL=Qwen/Qwen3-30B-A3B
   export CLAUDE_CODE_MAX_OUTPUT_TOKENS=16384
   claude "$@"
 }
@@ -120,8 +120,36 @@ deepinfra() {
 
 Then run `deepinfra` instead of `claude` to launch Claude Code via DeepInfra. Your regular `claude` command stays unchanged.
 
+### Model override environment variables
+
+Claude Code uses model aliases (`opus`, `sonnet`, `haiku`) internally. You can remap each alias to a DeepInfra model using these environment variables:
+
+| Environment variable | Description | Example |
+|---|---|---|
+| `ANTHROPIC_MODEL` | The primary model Claude Code uses for all tasks | `deepseek-ai/DeepSeek-V3.1-Terminus` |
+| `ANTHROPIC_DEFAULT_OPUS_MODEL` | Model used for the `opus` alias (complex reasoning) | `deepseek-ai/DeepSeek-R1` |
+| `ANTHROPIC_DEFAULT_SONNET_MODEL` | Model used for the `sonnet` alias (daily coding) | `deepseek-ai/DeepSeek-V3.1-Terminus` |
+| `ANTHROPIC_DEFAULT_HAIKU_MODEL` | Model used for the `haiku` alias and background tasks (tab completions, commit messages) | `Qwen/Qwen3-30B-A3B` |
+| `CLAUDE_CODE_SUBAGENT_MODEL` | Model used for subagents (parallel background tasks) | `Qwen/Qwen3-30B-A3B` |
+
+A more complete example with all overrides:
+
+```bash
+deepinfra() {
+  export ANTHROPIC_BASE_URL=https://api.deepinfra.com/anthropic
+  export ANTHROPIC_AUTH_TOKEN=$DEEPINFRA_TOKEN
+  export ANTHROPIC_MODEL=deepseek-ai/DeepSeek-V3.1-Terminus
+  export ANTHROPIC_DEFAULT_OPUS_MODEL=deepseek-ai/DeepSeek-R1
+  export ANTHROPIC_DEFAULT_SONNET_MODEL=deepseek-ai/DeepSeek-V3.1-Terminus
+  export ANTHROPIC_DEFAULT_HAIKU_MODEL=Qwen/Qwen3-30B-A3B
+  export CLAUDE_CODE_SUBAGENT_MODEL=Qwen/Qwen3-30B-A3B
+  export CLAUDE_CODE_MAX_OUTPUT_TOKENS=16384
+  claude "$@"
+}
+```
+
 <Note>
-  `ANTHROPIC_SMALL_FAST_MODEL` is used for lightweight tasks like tab completions and commit messages. Pick a fast, cheap model here to keep costs low.
+  `ANTHROPIC_DEFAULT_HAIKU_MODEL` is used for lightweight background tasks like tab completions and commit messages. Pick a fast, cheap model here to keep costs low. The older `ANTHROPIC_SMALL_FAST_MODEL` variable is deprecated — use `ANTHROPIC_DEFAULT_HAIKU_MODEL` instead.
 </Note>
 
 ## Streaming
