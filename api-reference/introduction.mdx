@@ -1,33 +1,24 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: 'API Reference'
+description: 'Complete reference for the DeepInfra REST API'
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+The DeepInfra API is available at `https://api.deepinfra.com`. It offers two sets of endpoints:
 
-## Welcome
+1. **OpenAI-compatible endpoints** at `/v1/openai` — drop-in replacement for OpenAI chat completions, embeddings, and image generation. Use these with any OpenAI SDK.
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
-
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+2. **DeepInfra native endpoints** at `/v1/inference/{model_name}` — direct access to all model types including speech recognition, object detection, image classification, and more.
 
 ## Authentication
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+All endpoints require a Bearer token in the `Authorization` header:
 
-```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
 ```
+Authorization: Bearer $DEEPINFRA_TOKEN
+```
+
+Get your API key from the [Dashboard](https://deepinfra.com/dash/api_keys).
+
+## Interactive reference
+
+Use the tabs above to browse and try all available endpoints, generated from our live OpenAPI specification.
