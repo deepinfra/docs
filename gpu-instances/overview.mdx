@@ -1,17 +1,16 @@
 ---
-title: GPU Clusters
-description: Rent dedicated B200 and B300 GPU clusters with SSH access for training, fine-tuning, and custom workloads.
+title: GPU Instances
+description: Rent dedicated B200 GPU instances with SSH access for training, fine-tuning, and custom workloads.
 icon: server
 ---
 
-DeepInfra GPU Clusters give you dedicated access to NVIDIA B200 and B300 hardware — the most powerful GPUs available. You get a container with SSH access and full control over your environment, billed by the hour.
+DeepInfra GPU Instances give you dedicated access to NVIDIA B200 hardware — the most powerful GPUs available. You get a container with SSH access and full control over your environment, billed by the hour.
 
 ## Available GPUs
 
 | GPU | Memory | Best for |
 |-----|--------|----------|
 | **B200-180GB** | 180GB HBM3e | Large-scale inference, fine-tuning, training |
-| **B300-288GB** | 288GB HBM3e | Largest models, maximum throughput, multi-node training |
 
 ## Key features
 
@@ -32,10 +31,10 @@ DeepInfra GPU Clusters give you dedicated access to NVIDIA B200 and B300 hardwar
 
 ### Start a new container
 
-1. Go to [Dashboard → Instances](https://deepinfra.com/dash/instances)
+1. Go to [Dashboard → GPU Instances](https://deepinfra.com/dash/instances)
 2. Click **New Container**
 3. **Select GPU configuration** — choose from available B200/B300 configs. Each shows:
-   - GPU type, quantity, and memory (e.g., `1xB200-180GB`, `8xB300-288GB`)
+   - GPU type, quantity, and memory (e.g., `1xB200-180GB`, `8xB200-180GB`)
    - Hourly pricing
    - Availability status
 4. **Enter container details**:
