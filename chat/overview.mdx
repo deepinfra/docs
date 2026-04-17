@@ -220,6 +220,30 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
 
 The response includes a `service_tier` field confirming which tier was used. Not all models support priority tiers — check the model page for availability.
 
+## Max output tokens
+
+The maximum number of tokens that can be generated in a single response is model-dependent, with a hard cap of 16384 tokens for most models. Set `max_tokens` to control the limit for a specific request.
+
+### Continuing responses beyond the limit
+
+If you need a longer response, use response continuation: send a follow-up request with the previous response included as an assistant message, and the model will continue from where it left off.
+
+```bash
+curl "https://api.deepinfra.com/v1/openai/chat/completions" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+    -d '{
+        "model": "deepseek-ai/DeepSeek-V3",
+        "messages": [
+            {"role": "user", "content": "Write a very long essay about AI."},
+            {"role": "assistant", "content": "<previous truncated response>"}
+        ],
+        "max_tokens": 4096
+    }'
+```
+
+Note: response continuation cannot extend past the model's total context window. A 400 error is returned when the total context size is exceeded.
+
 ## What's next
 
 <CardGroup cols={2}>

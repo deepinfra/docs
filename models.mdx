@@ -37,6 +37,18 @@ Some models have more than one version available. You can infer against a partic
 
 You can also infer against a `deploy_id` using `{"model": "deploy_id:DEPLOY_ID", ...}`. This is especially useful for [Custom LLMs](/private-models/custom-llms) — you can start inferring before the deployment finishes and before you have the model name + version pair.
 
+## Model deprecation
+
+Due to the fast-paced AI world, newer and better models are released every day. Occasionally we have to deprecate older models to maintain quality and affordability.
+
+When a model is deprecated:
+
+- **You'll receive at least 1 week's advance notice** before the deprecation date
+- **Your applications won't break** — after deprecation, inference requests are automatically forwarded to a recommended replacement model
+- **You'll get an email** notifying recent users of the model, including the deprecation date
+
+You can browse the current list of available models at [deepinfra.com/models](https://deepinfra.com/models).
+
 ## Suggest a model
 
 If you think there is a model that we should run, let us know at info@deepinfra.com. We read every email.
