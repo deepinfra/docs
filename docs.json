@@ -2,6 +2,11 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
   "name": "DeepInfra",
+  "analytics": {
+    "ga4": {
+      "measurementId": "G-EQ45SQSZZ0"
+    }
+  },
   "colors": {
     "primary": "#6366F1",
     "light": "#818CF8",
