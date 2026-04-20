@@ -157,14 +157,14 @@ The longer the conversation, the more tokens it uses. The maximum conversation l
 |-----------|-------|
 | `model` | Model name, or `MODEL_NAME:VERSION`, or `deploy_id:DEPLOY_ID` |
 | `messages` | Roles: `system`, `user`, `assistant` |
-| `max_tokens` | |
+| `max_tokens` | Max tokens to generate. Defaults to the model's max context length minus input length, or 16384, whichever is smaller |
 | `stream` | See [Streaming](/chat/streaming) |
-| `temperature` | |
-| `top_p` | |
-| `stop` | |
-| `n` | |
-| `presence_penalty` | |
-| `frequency_penalty` | |
+| `temperature` | Sampling temperature between 0 and 2. Higher values produce more random output; lower values more deterministic. Default: `1.0` |
+| `top_p` | Nucleus sampling threshold — only tokens comprising the top `top_p` probability mass are considered. Default: `1.0` |
+| `stop` | Up to 4 sequences where the API will stop generating further tokens |
+| `n` | Number of completion sequences to return. Default: `1` |
+| `presence_penalty` | Penalizes tokens that have already appeared in the text, encouraging the model to discuss new topics. Range: -2.0 to 2.0. Default: `0` |
+| `frequency_penalty` | Penalizes tokens based on how often they've appeared so far, reducing repetition. Range: -2.0 to 2.0. Default: `0` |
 | `response_format` | See [Structured Outputs](/chat/structured-outputs) |
 | `tools`, `tool_choice` | See [Tool Calling](/chat/tool-calling) |
 | `service_tier` | Priority inference for tagged models. See [Service Tier](#service-tier) below. |
@@ -173,6 +173,8 @@ The longer the conversation, the more tokens it uses. The maximum conversation l
 <Note>
   We may not be 100% compatible with all OpenAI parameters. Let us know on Discord or by email if something you need is missing.
 </Note>
+
+For the complete parameter reference, see the [API reference](https://docs.deepinfra.com/api-reference/openai-chat-completions).
 
 ## Service tier
 
