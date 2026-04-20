@@ -106,13 +106,15 @@ curl "https://api.deepinfra.com/v1/openai/completions" \
 |-----------|-------|
 | `model` | Model name or `MODEL_NAME:VERSION` |
 | `prompt` | Raw prompt string in the model's expected format |
-| `max_tokens` | |
-| `stream` | |
-| `temperature` | |
-| `top_p` | |
-| `stop` | |
-| `n` | |
-| `echo` | |
-| `logprobs` | |
+| `max_tokens` | Max tokens to generate. Defaults to the model's max context length minus input length |
+| `stream` | Stream output via SSE instead of returning the full response at once. Default: `false` |
+| `temperature` | Sampling temperature between 0 and 2. Higher values produce more random output; lower values more deterministic. Default: `1.0` |
+| `top_p` | Nucleus sampling threshold — only tokens comprising the top `top_p` probability mass are considered. Default: `1.0` |
+| `stop` | Up to 4 sequences where the API will stop generating further tokens |
+| `n` | Number of completion sequences to return. Default: `1` |
+| `echo` | If `true`, the prompt is included at the start of the returned text |
+| `logprobs` | Return log probabilities for the generated tokens |
 
 For every model, you can check its prompt format in the API section on its page.
+
+For the complete parameter reference, see the [API reference](/api-reference/openai-completions).
