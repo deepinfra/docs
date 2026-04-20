@@ -157,7 +157,7 @@ The longer the conversation, the more tokens it uses. The maximum conversation l
 |-----------|-------|
 | `model` | Model name, or `MODEL_NAME:VERSION`, or `deploy_id:DEPLOY_ID` |
 | `messages` | Roles: `system`, `user`, `assistant` |
-| `max_tokens` | Max tokens to generate. Defaults to the model's max context length minus input length, or 16384, whichever is smaller |
+| `max_tokens` | Max tokens to generate. See [Max output tokens](#max-output-tokens) |
 | `stream` | See [Streaming](/chat/streaming) |
 | `temperature` | Sampling temperature between 0 and 2. Higher values produce more random output; lower values more deterministic. Default: `1.0` |
 | `top_p` | Nucleus sampling threshold — only tokens comprising the top `top_p` probability mass are considered. Default: `1.0` |
@@ -174,7 +174,7 @@ The longer the conversation, the more tokens it uses. The maximum conversation l
   We may not be 100% compatible with all OpenAI parameters. Let us know on Discord or by email if something you need is missing.
 </Note>
 
-For the complete parameter reference, see the [API reference](https://docs.deepinfra.com/api-reference/openai-chat-completions).
+For the complete parameter reference, see the [API reference](/api-reference/openai-chat-completions).
 
 ## Service tier
 
