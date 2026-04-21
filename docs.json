@@ -2,6 +2,11 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
   "name": "DeepInfra",
+  "seo": {
+    "metatags": {
+      "canonical": "https://docs.deepinfra.com"
+    }
+  },
   "analytics": {
     "ga4": {
       "measurementId": "G-EQ45SQSZZ0"
