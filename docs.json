@@ -7,7 +7,7 @@
       "canonical": "https://docs.deepinfra.com"
     }
   },
-  "analytics": {
+  "integrations": {
     "ga4": {
       "measurementId": "G-EQ45SQSZZ0"
     }
