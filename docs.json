@@ -75,6 +75,15 @@
             ]
           },
           {
+            "group": "Batch API",
+            "pages": [
+              "batch/introduction",
+              "batch/batch-objects",
+              "batch/batch-endpoints",
+              "batch/file-endpoints"
+            ]
+          },
+          {
             "group": "Deploy Private Models",
             "pages": [
               "private-models/overview",
