@@ -1,0 +1,132 @@
+---
+title: Batch Objects
+description: Reference for the objects returned by the Batch API — the Batch and BatchUsage objects.
+icon: brackets-curly
+---
+
+Reference for the objects returned by the Batch API.
+
+## The Batch object
+
+Most batch endpoints return a `Batch` object describing a batch job.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | The batch identifier. |
+| `object` | string | The object type, always `"batch"`. |
+| `endpoint` | string | The endpoint the batch runs against. Must match the `url` used on every line of the input file. |
+| `errors` | object | Optional. Validation errors for the batch. See [errors](#errors). |
+| `input_file_id` | string | The `id` of the input file for the batch. |
+| `completion_window` | string | The time window after which the batch expires. Currently only `"24h"` is supported. |
+| `status` | string | The current status of the batch. See [Batch status](#batch-status). |
+| `output_file_id` | string | The `id` of the file containing the outputs of successfully executed requests. |
+| `error_file_id` | string | The `id` of the file containing the outputs of requests that failed (failed lines). |
+| `created_at` | integer | Unix timestamp (in seconds) for when the batch was created. |
+| `in_progress_at` | integer | Unix timestamp for when the batch started processing. `null` until reached. |
+| `expires_at` | integer | Unix timestamp for when the batch will expire. `null` until reached. |
+| `finalizing_at` | integer | Unix timestamp for when the batch started finalizing. `null` until reached. |
+| `completed_at` | integer | Unix timestamp for when the batch completed. `null` until reached. |
+| `failed_at` | integer | Unix timestamp for when the batch failed. `null` until reached. |
+| `expired_at` | integer | Unix timestamp for when the batch expired. `null` until reached. |
+| `cancelling_at` | integer | Unix timestamp for when the batch started cancelling. `null` until reached. |
+| `cancelled_at` | integer | Unix timestamp for when the batch was cancelled. `null` until reached. |
+| `request_counts` | object | Optional. The counts of requests by status within the batch. See [request_counts](#request_counts). |
+| `metadata` | object | Up to 16 key–value string pairs, where each key is a string of up to 64 characters and each value is a string of up to 512 characters. |
+| `model` | string | Optional. The model the inference is run against. |
+| `usage` | object | Optional. Token usage statistics for the batch. See [The BatchUsage object](#the-batchusage-object). |
+
+### Batch status
+
+A batch moves through the following statuses:
+
+| Status | Meaning |
+|--------|---------|
+| `validating` | The input file is being validated before the batch starts. |
+| `in_progress` | Validation passed and requests are running. |
+| `finalizing` | All requests are done; the output files are being assembled. |
+| `completed` | The batch finished; results are ready to download. |
+| `failed` | Validation failed. The [`errors`](#errors) field of the Batch object describes why the file failed. |
+| `expired` | Not all requests could finish within the 24-hour window; the finished ones are still written to the output file. |
+| `cancelling` | The batch is being cancelled. This status may last for some time while in-flight requests finish. |
+| `cancelled` | The batch has been cancelled successfully. |
+
+### errors
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `object` | string | The object type, always `"list"`. |
+| `data` | array | Optional. An array of error objects, each with the following optional fields: |
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `code` | string | Optional. A machine-readable error code. |
+| `line` | integer | Optional. The line of the input file the error refers to. |
+| `message` | string | Optional. A human-readable description of the error. |
+| `param` | string | Optional. The parameter the error relates to. |
+
+### request_counts
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `total` | integer | The total number of requests in the batch. |
+| `completed` | integer | The number of requests that have completed successfully. |
+| `failed` | integer | The number of requests that have failed. |
+
+## The BatchUsage object
+
+Token usage statistics aggregated across all requests in the batch.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `input_tokens` | integer | The total number of input (prompt) tokens across the batch. |
+| `input_tokens_details` | object | A breakdown of the input tokens. Contains `cached_tokens`, and may contain additional fields. |
+| `output_tokens` | integer | The total number of output (completion) tokens across the batch. |
+| `output_tokens_details` | object | A breakdown of the output tokens. Contains `reasoning_tokens`, and may contain additional fields. |
+| `total_tokens` | integer | The total number of tokens used (input + output). |
+
+## Example
+
+Batch object of a completed batch:
+
+```json
+{
+  "id": "batch_abc123",
+  "object": "batch",
+  "endpoint": "/v1/chat/completions",
+  "errors": null,
+  "input_file_id": "file_abc123",
+  "completion_window": "24h",
+  "status": "completed",
+  "output_file_id": "file_out456",
+  "error_file_id": null,
+  "created_at": 1711471533,
+  "in_progress_at": 1711471538,
+  "expires_at": null,
+  "finalizing_at": 1711475133,
+  "completed_at": 1711475134,
+  "failed_at": null,
+  "expired_at": null,
+  "cancelling_at": null,
+  "cancelled_at": null,
+  "request_counts": {
+    "total": 100,
+    "completed": 100,
+    "failed": 0
+  },
+  "metadata": {
+    "description": "nightly eval run"
+  },
+  "model": "deepseek-ai/DeepSeek-V3",
+  "usage": {
+    "input_tokens": 12000,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 8000,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "total_tokens": 20000
+  }
+}
+```

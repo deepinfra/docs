@@ -1,0 +1,367 @@
+---
+title: Files API
+description: The OpenAI-compatible Files API — upload, list, retrieve, download, and delete files.
+icon: file-lines
+---
+
+An **OpenAI-compatible** Files API for managing batch and fine-tune related files. All endpoints are relative to:
+
+```
+https://api.deepinfra.com/v1/openai
+```
+
+<Note>
+  Fine-tuning is not yet supported.
+</Note>
+
+Currently the only API that uses files is the [Batch API](/batch/introduction), which accepts files of up to 200 MB.
+
+## Objects
+
+### The FileObject
+
+Most file endpoints return a `FileObject` describing an uploaded file.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | The file identifier, referenced in API endpoints. |
+| `object` | string | The object type, always `"file"`. |
+| `bytes` | integer | The size of the file, in bytes. |
+| `created_at` | integer | Unix timestamp (in seconds) for when the file was created. |
+| `expires_at` | integer | Unix timestamp (in seconds) for when the file will be deleted. |
+| `filename` | string | The name of the file. |
+| `purpose` | string | The intended purpose of the file. One of `"batch"`, `"fine-tune"`, or `"batch-output"`. |
+
+```json
+{
+  "id": "file_abc123",
+  "object": "file",
+  "bytes": 120000,
+  "created_at": 1677610602,
+  "expires_at": 1680202602,
+  "filename": "requests.jsonl",
+  "purpose": "batch"
+}
+```
+
+## Create file
+
+```
+POST /files
+```
+
+Creates a file used in other API endpoints.
+
+Creating a file requires the following parameters:
+
+<AccordionGroup>
+  <Accordion title="file">
+    The file to be uploaded.
+  </Accordion>
+  <Accordion title="purpose">
+    The intended purpose of the file. Can be `"batch"` or `"fine-tune"` for upload, but only `"batch"` is currently supported.
+  </Accordion>
+  <Accordion title="expires_after (optional)">
+    Controls how long the file remains available. An object with two fields:
+
+    - **`anchor`** (optional) — must be `"created_at"`. The expiry is measured from when the file is created. Defaults to `"created_at"`.
+    - **`seconds`** (optional) — the number of seconds the file stays available after the anchor. An integer between `3600` (1 hour) and `2592000` (30 days). Defaults to `2592000` (30 days).
+  </Accordion>
+</AccordionGroup>
+
+This endpoint returns a [FileObject](#the-fileobject).
+
+<CodeGroup>
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="$DEEPINFRA_TOKEN",
+    base_url="https://api.deepinfra.com/v1/openai",
+)
+
+file = client.files.create(
+    file=open("requests.jsonl", "rb"),
+    purpose="batch",
+    expires_after={"anchor": "created_at", "seconds": 604800},
+)
+print(file.id)
+```
+
+```javascript JavaScript
+import fs from "fs";
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: "$DEEPINFRA_TOKEN",
+  baseURL: "https://api.deepinfra.com/v1/openai",
+});
+
+const file = await client.files.create({
+  file: fs.createReadStream("requests.jsonl"),
+  purpose: "batch",
+  expires_after: { anchor: "created_at", seconds: 604800 },
+});
+console.log(file.id);
+```
+
+```bash cURL
+curl "https://api.deepinfra.com/v1/openai/files" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -F purpose="batch" \
+  -F file="@requests.jsonl" \
+  -F expires_after[anchor]="created_at" \
+  -F expires_after[seconds]=604800
+```
+
+</CodeGroup>
+
+```json
+{
+  "id": "file_abc123",
+  "object": "file",
+  "bytes": 120000,
+  "created_at": 1677610602,
+  "expires_at": 1678215402,
+  "filename": "requests.jsonl",
+  "purpose": "batch"
+}
+```
+
+## List files
+
+```
+GET /files
+```
+
+Listing files requires the following parameters:
+
+<AccordionGroup>
+  <Accordion title="after (optional)">
+    A pagination cursor. The returned list starts from the object right after the file with this `id`. If omitted, the list starts from the first file.
+  </Accordion>
+  <Accordion title="limit (optional)">
+    An integer between `1` and `10000`. The returned list will have at most `limit` elements. Defaults to `10000`.
+  </Accordion>
+  <Accordion title="order (optional)">
+    Sort order by `created_at`, either `"asc"` (ascending) or `"desc"` (descending).
+  </Accordion>
+  <Accordion title="purpose (optional)">
+    Only returns files of the given purpose. If omitted, files are not filtered by purpose.
+  </Accordion>
+</AccordionGroup>
+
+The returned object has the following fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `object` | string | The object type, always `"list"`. |
+| `data` | array | A list of [FileObject](#the-fileobject). |
+| `first_id` | string | The `id` of the first file in the list. |
+| `last_id` | string | The `id` of the last file in the list. |
+| `has_more` | boolean | `true` if there are more files after `last_id`. |
+
+<CodeGroup>
+
+```python Python
+files = client.files.list(
+    purpose="batch",
+    limit=20,
+    order="desc",
+)
+for file in files.data:
+    print(file.id, file.filename)
+```
+
+```javascript JavaScript
+const files = await client.files.list({
+  purpose: "batch",
+  limit: 20,
+  order: "desc",
+});
+for (const file of files.data) {
+  console.log(file.id, file.filename);
+}
+```
+
+```bash cURL
+curl "https://api.deepinfra.com/v1/openai/files?purpose=batch&limit=20&order=desc" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+```
+
+</CodeGroup>
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "file_abc123",
+      "object": "file",
+      "bytes": 120000,
+      "created_at": 1677610602,
+      "expires_at": 1678215402,
+      "filename": "requests.jsonl",
+      "purpose": "batch"
+    },
+    {
+      "id": "file_def456",
+      "object": "file",
+      "bytes": 84000,
+      "created_at": 1677520000,
+      "expires_at": 1678124800,
+      "filename": "eval.jsonl",
+      "purpose": "batch"
+    }
+  ],
+  "first_id": "file_abc123",
+  "last_id": "file_def456",
+  "has_more": false
+}
+```
+
+## Retrieve a file
+
+```
+GET /files/{file_id}
+```
+
+Returns information about a specific file.
+
+Retrieving a file requires the following parameters:
+
+<AccordionGroup>
+  <Accordion title="file_id">
+    The `id` of the file to retrieve.
+  </Accordion>
+</AccordionGroup>
+
+This endpoint returns a [FileObject](#the-fileobject).
+
+<CodeGroup>
+
+```python Python
+file = client.files.retrieve("file_abc123")
+print(file.id, file.filename)
+```
+
+```javascript JavaScript
+const file = await client.files.retrieve("file_abc123");
+console.log(file.id, file.filename);
+```
+
+```bash cURL
+curl "https://api.deepinfra.com/v1/openai/files/file_abc123" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+```
+
+</CodeGroup>
+
+```json
+{
+  "id": "file_abc123",
+  "object": "file",
+  "bytes": 120000,
+  "created_at": 1677610602,
+  "expires_at": 1678215402,
+  "filename": "requests.jsonl",
+  "purpose": "batch"
+}
+```
+
+## Retrieve file content
+
+```
+GET /files/{file_id}/content
+```
+
+Returns the content of a specified file.
+
+Retrieving file content requires the following parameters:
+
+<AccordionGroup>
+  <Accordion title="file_id">
+    The `id` of the file whose content to retrieve.
+  </Accordion>
+</AccordionGroup>
+
+This endpoint returns the binary response content.
+
+<CodeGroup>
+
+```python Python
+content = client.files.content("file_abc123")
+print(content.text)
+```
+
+```javascript JavaScript
+const content = await client.files.content("file_abc123");
+console.log(await content.text());
+```
+
+```bash cURL
+curl "https://api.deepinfra.com/v1/openai/files/file_abc123/content" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+```
+
+</CodeGroup>
+
+## Delete a file
+
+```
+DELETE /files/{file_id}
+```
+
+Deletes a file and removes it from all storages.
+
+Deleting a file requires the following parameters:
+
+<AccordionGroup>
+  <Accordion title="file_id">
+    The `id` of the file to delete.
+  </Accordion>
+</AccordionGroup>
+
+This endpoint returns a `FileDeleted` object with the following fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | The `id` of the deleted file. |
+| `deleted` | boolean | `true` if the file was deleted. |
+| `object` | string | The object type, always `"file"`. |
+
+<CodeGroup>
+
+```python Python
+deleted = client.files.delete("file_abc123")
+print(deleted.deleted)
+```
+
+```javascript JavaScript
+const deleted = await client.files.delete("file_abc123");
+console.log(deleted.deleted);
+```
+
+```bash cURL
+curl -X DELETE "https://api.deepinfra.com/v1/openai/files/file_abc123" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+```
+
+</CodeGroup>
+
+```json
+{
+  "id": "file_abc123",
+  "deleted": true,
+  "object": "file"
+}
+```
+
+## File API Limits
+
+| Limit | Value |
+|-------|-------|
+| Maximum size of a single user-created file | 512 MB |
+| Maximum file size with `purpose = "batch"` | 200 MB |
+| Maximum total file size per user (including response files) | 2 GB |
