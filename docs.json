@@ -105,7 +105,9 @@
               "integrations/langchain",
               "integrations/llama-index",
               "integrations/ai-sdk",
-              "integrations/autogen"
+              "integrations/autogen",
+              "integrations/pi",
+              "integrations/hermes-agent"
             ]
           },
           {
