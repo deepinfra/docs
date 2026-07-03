@@ -1,0 +1,89 @@
+---
+title: Pi
+description: Use DeepInfra models with the Pi coding agent via a custom OpenAI-compatible provider.
+icon: terminal
+---
+
+[Pi](https://github.com/earendil-works/pi) is a coding agent. It doesn't ship DeepInfra as a built-in provider, but it works with any OpenAI-compatible endpoint — so you can add DeepInfra as a custom provider and run any [LLM from our catalog](https://deepinfra.com/models/text-generation).
+
+## Configure the provider
+
+Add a `deepinfra` provider to your Pi configuration. See Pi's [custom provider docs](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/custom-provider.md) for where the config file lives.
+
+```json
+{
+  "providers": {
+    "deepinfra": {
+      "name": "DeepInfra",
+      "baseUrl": "https://api.deepinfra.com/v1/openai",
+      "apiKey": "$DEEPINFRA_TOKEN",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "deepseek-ai/DeepSeek-V4-Flash",
+          "name": "DeepSeek V4 Flash",
+          "reasoning": true,
+          "input": ["text"],
+          "cost": { "input": 0.09, "output": 0.18, "cacheRead": 0.018 },
+          "contextWindow": 1048576,
+          "maxTokens": 65536
+        }
+      ]
+    }
+  }
+}
+```
+
+Get your API key from the [Dashboard](https://deepinfra.com/dash/api_keys).
+
+## Run it
+
+Set your API key in the environment and launch Pi against the model:
+
+```bash
+export DEEPINFRA_TOKEN=<your DeepInfra API token>
+pi --model deepinfra/deepseek-ai/DeepSeek-V4-Flash
+```
+
+## Notes on the values
+
+- **`id`** (`deepseek-ai/DeepSeek-V4-Flash`) must match exactly — it's case-sensitive and is passed straight through as the model name.
+- **`contextWindow`** is the model's full 1M-token window. **`maxTokens`** (`65536`) is just a per-request output cap you can raise or lower to taste.
+- The **`cost`** block only drives Pi's local spend display; the numbers above are DeepInfra's current per-million-token rates for this model, but they don't affect requests either way.
+
+<Note>
+  To get the current context window and pricing for this or any other model, fetch [`/v1/openai/models?filter=with_meta`](https://api.deepinfra.com/v1/openai/models?filter=with_meta&sort_by=openclaw), or see the [model's page](https://deepinfra.com/deepseek-ai/DeepSeek-V4-Flash).
+</Note>
+
+## Troubleshooting
+
+If it doesn't work out of the box, confirm your API key and balance with a direct API call. This bypasses Pi entirely and tells you whether the issue is your DeepInfra account or the Pi config:
+
+```bash
+curl -s https://api.deepinfra.com/v1/openai/chat/completions \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "deepseek-ai/DeepSeek-V4-Flash",
+    "messages": [{"role": "user", "content": "Say hello in one word."}]
+  }'
+```
+
+If this returns a normal completion, your key and balance are good. A `401` means the key is wrong; a `402`/quota error means the account needs funding.
+
+## Learn more
+
+<CardGroup cols={2}>
+  <Card title="Custom providers" icon="plug" href="https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/custom-provider.md">
+    Pi's guide to defining a custom provider.
+  </Card>
+  <Card title="Providers overview" icon="list" href="https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/providers.md">
+    How Pi handles providers and models.
+  </Card>
+  <Card title="Chat Completions" icon="comments" href="/chat/overview">
+    DeepInfra's OpenAI-compatible API.
+  </Card>
+  <Card title="Authentication" icon="key" href="/account/authentication">
+    API keys and scoped JWTs.
+  </Card>
+</CardGroup>
