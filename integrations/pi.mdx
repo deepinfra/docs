@@ -25,6 +25,10 @@ Add a `deepinfra` provider to your Pi configuration. See Pi's [custom provider d
           "reasoning": true,
           "input": ["text"],
           "cost": { "input": 0.09, "output": 0.18, "cacheRead": 0.018 },
+          "compat": {
+            "supportsDeveloperRole": false,
+            "thinkingFormat": "deepseek"
+          },
           "contextWindow": 1048576,
           "maxTokens": 65536
         }
@@ -48,6 +52,9 @@ pi --model deepinfra/deepseek-ai/DeepSeek-V4-Flash
 ## Notes on the values
 
 - **`id`** (`deepseek-ai/DeepSeek-V4-Flash`) must match exactly — it's case-sensitive and is passed straight through as the model name.
+- The **`compat`** block applies to DeepSeek models only — omit it for other models:
+  - **`supportsDeveloperRole: false`** is required for DeepSeek models. Because they're marked `"reasoning": true`, Pi defaults to sending the system prompt with the OpenAI-only `developer` role, which is rejected with a `422` error. This setting makes Pi use the standard `system` role instead.
+  - **`thinkingFormat: "deepseek"`** matches how DeepSeek models stream reasoning tokens (as `reasoning_content`), so the model's thinking renders properly in Pi.
 - **`contextWindow`** is the model's full 1M-token window. **`maxTokens`** (`65536`) is just a per-request output cap you can raise or lower to taste.
 - The **`cost`** block only drives Pi's local spend display; the numbers above are DeepInfra's current per-million-token rates for this model, but they don't affect requests either way.
 
@@ -57,7 +64,15 @@ pi --model deepinfra/deepseek-ai/DeepSeek-V4-Flash
 
 ## Troubleshooting
 
-If it doesn't work out of the box, confirm your API key and balance with a direct API call. This bypasses Pi entirely and tells you whether the issue is your DeepInfra account or the Pi config:
+**`422` role validation error** — an error like:
+
+```
+Error: 422: {"message":"Input should be <ChatMessageRole.TOOL: 'tool'>", ..., "param":"messages.0...role"}
+```
+
+means Pi sent the system prompt with the `developer` role, which isn't accepted. This happens by default with DeepSeek models because they're configured with `"reasoning": true`. Fix it by adding `"compat": { "supportsDeveloperRole": false }` to the model entry, as shown in the config above.
+
+**`401` / `402` errors** — if requests fail even though the config looks right, confirm your API key and balance with a direct API call. This bypasses Pi entirely and tells you whether the issue is your DeepInfra account or the Pi config:
 
 ```bash
 curl -s https://api.deepinfra.com/v1/openai/chat/completions \
