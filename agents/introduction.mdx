@@ -158,5 +158,8 @@ DeepInfra retains administrative SSH access for automated maintenance (restarts 
 **Why was my instance paused?**
 Most likely it exceeded the fair-use network transfer threshold for its plan. Start it again from the dashboard once usage normalizes.
 
+**What happens if my account is suspended?**
+If your account is suspended — for example when your balance runs out — your instances are automatically stopped within a minute or two, and creating, starting, or restoring instances is blocked. Nothing is deleted: state is preserved the same way as a regular stop, and once your account is back in good standing you can start your instances again. Keep in mind that a running agent spends on inference on its own, so consider enabling [Automatic Top-Up](https://deepinfra.com/dash/billing) if you plan to leave it unattended.
+
 **Where do I see what my agent is costing me?**
 On the [Usage](https://deepinfra.com/dash/usage) page — compute appears as **Hosted Agent**, and the agent's model calls appear as regular inference usage.
