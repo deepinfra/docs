@@ -1,0 +1,64 @@
+---
+title: Hermes-Agent
+description: Run a fully managed Hermes-Agent instance — Nous Research's autonomous agent, driven over SSH and powered by DeepInfra models.
+icon: terminal
+---
+
+[Hermes-Agent](https://github.com/NousResearch/hermes-agent) is a self-improving autonomous agent by Nous Research, driven from the terminal. The hosted version gives you a dedicated, always-on instance without running your own server: DeepInfra provisions the VM, installs Hermes, and pre-configures it with a dedicated DeepInfra API key.
+
+Hermes-Agent instances are **SSH only** — the framework runs without a web dashboard, so you connect over SSH after creation.
+
+<Note>
+  Want to run Hermes on your own machine instead? See [Hermes Agent integration](/integrations/hermes-agent) for using DeepInfra as a custom provider in a self-hosted setup.
+</Note>
+
+## Plans
+
+Hermes-Agent instances are available on the `budget` (2 vCPU, 2 GB RAM) and `tiny` (2 vCPU, 1 GB RAM) plans. See [plans and billing](/agents/introduction#plans) for details; current per-hour pricing is shown in the **Create Instance** dialog.
+
+## Create an instance
+
+1. Make sure your public SSH key is registered at [Dashboard → SSH Keys](https://deepinfra.com/dash/ssh_keys) — it's your only way in
+2. Go to [Dashboard → Hosted Agents](https://deepinfra.com/dash/agents) and click **Create Instance**
+3. Enter a **Name**, choose **Hermes-Agent** as the instance type, and pick a plan
+4. Click **Create** — setup is fully automated and takes a few minutes
+
+## Connect and run
+
+Once the instance is `running`, click **SSH** in the Connect column to get the exact command, or use the public IP from the details page:
+
+```bash
+ssh hermes@<public_ip> -p 2222
+```
+
+Then start the agent:
+
+```bash
+hermes
+```
+
+That's it — the instance ships with a working configuration, so Hermes is ready to go on first login.
+
+<Warning>
+  The instance gets a **new public IP address** on every restart. Grab the current one from the details page.
+</Warning>
+
+## Configuration
+
+Hermes keeps its configuration in `~/.hermes/`:
+
+- `~/.hermes/config.yaml` — model, provider, and agent settings. See the [Hermes configuration docs](https://hermes-agent.nousresearch.com/docs/user-guide/configuration).
+- `~/.hermes/.env` — secrets. The `DEEPINFRA_API_KEY` line is managed by DeepInfra and refreshed on every instance start, so don't edit it — manual changes to that line are overwritten. The rest of the file is yours: other secrets you add (for example a third-party API key for a tool) stay untouched.
+
+You can point Hermes at any [model from our catalog](https://deepinfra.com/models/text-generation) — for example `deepseek-ai/DeepSeek-V4-Flash` — either by editing `config.yaml` or interactively with `hermes model`. The agent's model calls are billed as regular inference usage against your account.
+
+## FAQ
+
+**Why is there no dashboard link for my instance?**
+By design — Hermes-Agent is a terminal-driven framework with no web UI. SSH in and run `hermes`.
+
+**Does my work survive stop/start?**
+Yes. The whole filesystem — Hermes state, your files, installed packages — is captured in a snapshot on stop and restored on start. Only the public IP changes.
+
+**Can I install extra tools on the instance?**
+Yes, it's your VM — install packages and customize freely over SSH. Automatic [backups](/agents/introduction#backups) cover your changes.

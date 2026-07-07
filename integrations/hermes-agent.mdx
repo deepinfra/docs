@@ -4,6 +4,10 @@ description: Use DeepInfra models with Hermes Agent by adding a custom OpenAI-co
 icon: robot
 ---
 
+<Note>
+  Don't want to host it yourself? DeepInfra can run Hermes for you — see [Hosted Agents: Hermes-Agent](/agents/hermes-agent).
+</Note>
+
 [Hermes Agent](https://github.com/NousResearch/hermes-agent) is a self-hosted, self-improving autonomous agent by Nous Research. DeepInfra isn't a built-in provider, but Hermes works with any OpenAI-compatible endpoint (`/v1/chat/completions`) — so you add DeepInfra as a `custom` provider and use any [LLM from our catalog](https://deepinfra.com/models/text-generation).
 
 ## Configure `~/.hermes/config.yaml`
