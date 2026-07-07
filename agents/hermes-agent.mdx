@@ -48,7 +48,7 @@ That's it — the instance ships with a working configuration, so Hermes is read
 Hermes keeps its configuration in `~/.hermes/`:
 
 - `~/.hermes/config.yaml` — model, provider, and agent settings. See the [Hermes configuration docs](https://hermes-agent.nousresearch.com/docs/user-guide/configuration).
-- `~/.hermes/.env` — secrets. `DEEPINFRA_API_KEY` is pre-provisioned; any keys you add yourself are preserved across maintenance.
+- `~/.hermes/.env` — secrets. The `DEEPINFRA_API_KEY` line is managed by DeepInfra and refreshed on every instance start, so don't edit it — manual changes to that line are overwritten. The rest of the file is yours: other secrets you add (for example a third-party API key for a tool) stay untouched.
 
 You can point Hermes at any [model from our catalog](https://deepinfra.com/models/text-generation) — for example `deepseek-ai/DeepSeek-V4-Flash` — either by editing `config.yaml` or interactively with `hermes model`. The agent's model calls are billed as regular inference usage against your account.
 

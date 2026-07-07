@@ -82,7 +82,7 @@ From the instance list or its details page you can:
 - **Delete** — stop and permanently remove the instance. This cannot be undone.
 
 <Note>
-  DeepInfra retains administrative SSH access to your instance to automate maintenance tasks (restart and restore from backups).
+  DeepInfra retains administrative SSH access to your instance to automate maintenance tasks (update and restore from backups for example).
 </Note>
 
 ## Backups
@@ -153,7 +153,7 @@ Instances run in `us-west-2` by default. Accounts subject to EU data-protection 
 Nothing is lost — state is captured in a snapshot and restored when you start it again. Only the public IP changes.
 
 **Can DeepInfra access my instance?**
-DeepInfra retains administrative SSH access for automated maintenance (restarts and backup restores).
+DeepInfra retains administrative SSH access for automated maintenance (updates and backup restores for example).
 
 **Why was my instance paused?**
 Most likely it exceeded the fair-use network transfer threshold for its plan. Start it again from the dashboard once usage normalizes.
