@@ -1,0 +1,162 @@
+---
+title: Introduction to Hosted Agents
+description: Fully managed instances running open-source agent frameworks — created in minutes, billed by the hour, pre-wired to DeepInfra inference.
+icon: robot
+---
+
+Hosted Agents are fully managed virtual machines that run an open-source agent framework for you. You pick a framework and a plan, and DeepInfra provisions the instance, installs and configures the agent, and wires it to a dedicated DeepInfra API key — no servers to set up, no config files to bootstrap. Your instance is up and running in a few minutes, and its state persists across stops and restarts.
+
+Manage your instances at [Dashboard → Hosted Agents](https://deepinfra.com/dash/agents).
+
+## Available frameworks
+
+| Framework | Access | Description |
+|-----------|--------|-------------|
+| [OpenClaw](/agents/openclaw) | Web dashboard + SSH | Your personal AI assistant, reachable on the messaging channels you already use. [Open source](https://github.com/openclaw/openclaw). |
+| [Hermes-Agent](/agents/hermes-agent) | SSH only | Self-improving autonomous agent by Nous Research, driven from the terminal. [Open source](https://github.com/NousResearch/hermes-agent). |
+
+## Plans
+
+| Plan | vCPU | RAM | Included monthly transfer | Available for |
+|------|------|-----|---------------------------|---------------|
+| `standard` | 2 | 4 GB | 4 TB | OpenClaw |
+| `budget` | 2 | 2 GB | 3 TB | OpenClaw, Hermes-Agent |
+| `tiny` | 2 | 1 GB | 2 TB | Hermes-Agent |
+
+Current per-hour pricing for each plan is shown in the **Create Instance** dialog and on each instance's details page.
+
+## Billing
+
+Two separate line items make up the cost of a hosted agent:
+
+- **Compute** — a per-hour rate for the instance itself, billed only while the instance is active (creating, starting, running, or stopping). A stopped instance costs nothing.
+- **Inference** — whatever the agent spends on model calls. Each instance gets its own DeepInfra API key, and its LLM usage is billed at standard token prices against your account.
+
+Both appear on your [Usage](https://deepinfra.com/dash/usage) page; compute shows up as **Hosted Agent**.
+
+<Note>
+  Fair use: instances that exceed an average of their plan's included network transfer per month (inbound + outbound, prorated by uptime) may be temporarily paused. You can start the instance again from the dashboard once usage normalizes.
+</Note>
+
+## Create an instance
+
+<Steps>
+  <Step title="Add an SSH key">
+    Register your public SSH key at [Dashboard → SSH Keys](https://deepinfra.com/dash/ssh_keys). It's installed on every instance you create, and you'll need it to connect over SSH.
+  </Step>
+  <Step title="Open Hosted Agents">
+    Go to [Dashboard → Hosted Agents](https://deepinfra.com/dash/agents) and click **Create Instance**.
+  </Step>
+  <Step title="Configure and create">
+    Pick a **Name** (up to 64 characters), an **Instance Type** (the agent framework), and a **Plan**, then click **Create**.
+  </Step>
+  <Step title="Wait for it to come up">
+    Setup is fully automated and takes a few minutes. Once the instance is `running`, connect via the **dashboard** link (OpenClaw) or **SSH** (any framework).
+  </Step>
+</Steps>
+
+## Instance lifecycle
+
+| State | Description |
+|-------|-------------|
+| `creating` | The instance is being provisioned |
+| `starting` | The instance is booting up |
+| `stopping` | The instance is shutting down; a snapshot of its state is captured |
+| `running` | The instance is active and accessible |
+| `stopped` | The instance is shut down — not billed for compute |
+| `failed` | The instance hit an unrecoverable error (see the fail reason on its details page) |
+
+Stopping an instance shuts it down so you're not billed for compute while it's idle. Starting it again restores everything as it was.
+
+<Warning>
+  The instance gets a **new public IP address** on every restart. Check the details page for the current one.
+</Warning>
+
+## Manage an instance
+
+From the instance list or its details page you can:
+
+- **Start / Stop** — pause compute billing without losing state.
+- **Update** — when a newer framework version is available, upgrade in place. No restart needed; the agent may be unresponsive for a few minutes.
+- **Backup** — trigger a snapshot on demand (see below).
+- **Delete** — stop and permanently remove the instance. This cannot be undone.
+
+<Note>
+  DeepInfra retains administrative SSH access to your instance to automate maintenance tasks (restart and restore from backups).
+</Note>
+
+## Backups
+
+Backups are created automatically every 24 hours, and one is also captured whenever you stop the instance. Snapshots older than 5 days are cleaned up, with at least 2 always retained. You can create one manually anytime with **Create Backup** on the details page.
+
+To roll back, pick a backup in the **Backups** table and click **Restore**.
+
+<Warning>
+  Restoring overwrites the instance's current data with the backup. This cannot be undone — take a fresh backup first if you might need the current state.
+</Warning>
+
+## HTTP API
+
+Everything above is also available programmatically. Authenticate with your [API key](/account/authentication).
+
+Create an instance:
+
+```bash
+curl -X POST https://api.deepinfra.com/v1/agents \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "my-agent",
+    "agent_type_id": "openclaw",
+    "plan_id": "standard"
+  }'
+```
+
+List your instances:
+
+```bash
+curl "https://api.deepinfra.com/v1/agents?state=all" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+```
+
+Start, stop, or update:
+
+```bash
+curl -X POST https://api.deepinfra.com/v1/agents/{instance_id}/start \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+
+curl -X POST https://api.deepinfra.com/v1/agents/{instance_id}/stop \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+
+curl -X POST https://api.deepinfra.com/v1/agents/{instance_id}/update \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+```
+
+Delete:
+
+```bash
+curl -X DELETE https://api.deepinfra.com/v1/agents/{instance_id} \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+```
+
+Other endpoints: `GET /v1/agents/catalog` (frameworks, plans, and current pricing), `GET /v1/agents/{instance_id}/backups`, `POST /v1/agents/{instance_id}/backup`, and `POST /v1/agents/{instance_id}/backups/{backup_id}/restore`. See the [API Reference](https://docs.deepinfra.com/api-reference) for full schemas.
+
+## FAQ
+
+**How many instances can I run?**
+Up to 5 active instances per account.
+
+**Where does my instance run?**
+Instances run in `us-west-2` by default. Accounts subject to EU data-protection rules are placed in `eu-central-1`. The region is shown on the instance details page.
+
+**What happens to my data when I stop an instance?**
+Nothing is lost — state is captured in a snapshot and restored when you start it again. Only the public IP changes.
+
+**Can DeepInfra access my instance?**
+DeepInfra retains administrative SSH access for automated maintenance (restarts and backup restores).
+
+**Why was my instance paused?**
+Most likely it exceeded the fair-use network transfer threshold for its plan. Start it again from the dashboard once usage normalizes.
+
+**Where do I see what my agent is costing me?**
+On the [Usage](https://deepinfra.com/dash/usage) page — compute appears as **Hosted Agent**, and the agent's model calls appear as regular inference usage.

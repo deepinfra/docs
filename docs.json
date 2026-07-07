@@ -99,6 +99,14 @@
             ]
           },
           {
+            "group": "Hosted Agents",
+            "pages": [
+              "agents/introduction",
+              "agents/openclaw",
+              "agents/hermes-agent"
+            ]
+          },
+          {
             "group": "Integrations",
             "pages": [
               "integrations/anthropic",

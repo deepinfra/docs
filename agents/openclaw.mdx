@@ -1,0 +1,62 @@
+---
+title: OpenClaw
+description: Run a fully managed OpenClaw instance — your personal AI assistant with a web dashboard, powered by DeepInfra models.
+icon: shrimp
+---
+
+[OpenClaw](https://openclaw.ai) is the wildly popular open-source personal AI assistant ([github.com/openclaw/openclaw](https://github.com/openclaw/openclaw)) that talks to you on the channels you already use — WhatsApp, Telegram, Slack, Discord, and many more — and acts autonomously on your behalf.
+
+The hosted version gives you a dedicated, always-on OpenClaw instance without running your own server: DeepInfra provisions the VM, installs OpenClaw, wires it to a dedicated DeepInfra API key, and keeps it backed up. You get the full OpenClaw web dashboard plus SSH access.
+
+## Plans
+
+OpenClaw instances are available on the `standard` (2 vCPU, 4 GB RAM) and `budget` (2 vCPU, 2 GB RAM) plans. See [plans and billing](/agents/introduction#plans) for details; current per-hour pricing is shown in the **Create Instance** dialog.
+
+## Create an instance
+
+1. Go to [Dashboard → Hosted Agents](https://deepinfra.com/dash/agents) and click **Create Instance**
+2. Enter a **Name**, choose **OpenClaw** as the instance type, and pick a plan
+3. Click **Create** — setup is fully automated and takes a few minutes
+
+## Open the dashboard
+
+Once the instance is `running`, click **dashboard** in the Connect column (or **Open Dashboard** in the actions menu). The OpenClaw dashboard opens in a new tab, served securely through DeepInfra — no ports to expose or tunnels to set up.
+
+<Note>
+  Right after a start, the instance can take up to ~3 minutes to finish booting. If you see a loading page, it refreshes automatically once the dashboard is up.
+</Note>
+
+From the dashboard you can chat with your agent, connect messaging channels, and manage its configuration — everything a self-hosted OpenClaw offers. See the [OpenClaw docs](https://docs.openclaw.ai) for what the assistant itself can do.
+
+## Models
+
+Your instance comes pre-configured with a DeepInfra model, so it works out of the box. You can switch to any model from [our catalog](https://deepinfra.com/models/text-generation) in OpenClaw's settings — for example `deepseek-ai/DeepSeek-V4-Flash`. The agent's model calls are billed as regular inference usage against your account.
+
+## SSH access
+
+Power users can connect directly:
+
+```bash
+ssh openclaw@<public_ip> -p 2222
+```
+
+The public IP and SSH port are shown on the instance details page. Your account's [SSH keys](https://deepinfra.com/dash/ssh_keys) are installed automatically.
+
+<Warning>
+  The file `/home/openclaw/config.env` is managed by DeepInfra — manual edits will be overwritten by maintenance. OpenClaw's self-update is disabled on hosted instances; upgrade through the dashboard's **Update** action instead.
+</Warning>
+
+## Updating and backups
+
+When a newer OpenClaw version is available, an **Update** action appears — it upgrades in place, with no restart. Backups run automatically every 24 hours; see [Backups](/agents/introduction#backups).
+
+## FAQ
+
+**Why is the dashboard not loading right after I start the instance?**
+The VM boots in stages; the dashboard is the last thing to come up (up to ~3 minutes). The loading page retries automatically.
+
+**My agent stopped responding on its channels — what happened?**
+Check the instance state at [Dashboard → Hosted Agents](https://deepinfra.com/dash/agents). If it's `stopped` or paused for fair use, start it again. Note that the instance gets a new public IP on restart — dashboard and channel connections are unaffected, but any SSH shortcuts you saved need the new IP.
+
+**Can I customize the instance over SSH?**
+Yes — install packages, add skills, edit OpenClaw's own configuration. Just leave `/home/openclaw/config.env` alone and don't re-enable self-update; version upgrades go through the **Update** action.
