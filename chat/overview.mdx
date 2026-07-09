@@ -226,7 +226,7 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
 
 ### Flex
 
-Set `service_tier` to `"flex"` for latency-tolerant traffic at a discount. Flex requests are **best-effort**: when a model is busy they may be queued or rejected with an HTTP 429, so use flex for work you can retry rather than interactive traffic.
+Set `service_tier` to `"flex"` to run Chat Completions requests at a lower cost in exchange for slower response times and occasional resource unavailability. It's ideal for non-production or lower-priority tasks such as model evaluations, data enrichment, and asynchronous workloads. When a model is busy, a flex request may wait up to 10 minutes for available capacity before it runs or is rejected with an HTTP 429, so use it for work you can retry.
 
 <Note>
   Flex inference is billed at a 20% discount off the model's standard per-token price.
