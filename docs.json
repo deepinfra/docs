@@ -45,8 +45,7 @@
             "pages": [
               "index",
               "quickstart",
-              "models",
-              "request-compression"
+              "models"
             ]
           },
           {
@@ -126,6 +125,7 @@
               "account/authentication",
               "account/rate-limits",
               "account/webhooks",
+              "account/request-compression",
               "account/okta-sso",
               "account/data-privacy",
               "account/subprocessors"

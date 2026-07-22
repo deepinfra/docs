@@ -86,14 +86,3 @@ Request compression pays off in proportion to how large your request body is:
   codings (`deflate`, `br`, `zstd`) are not decompressed — a body compressed with those will
   fail to parse. Use `gzip`.
 </Note>
-
-<Warning>
-  `Content-Encoding` describes compression, not character set. The only value that does anything
-  here is `gzip`, and only when the body is genuinely gzip-compressed — setting
-  `Content-Encoding: gzip` on a body that isn't gzip will make the request fail. A charset such as
-  `utf-8` belongs in `Content-Type` (e.g. `application/json; charset=utf-8`), not in
-  `Content-Encoding` (where it is simply ignored).
-</Warning>
-
-The official OpenAI SDKs do not compress request bodies. To send compressed requests, use a
-raw HTTP client as shown above.
