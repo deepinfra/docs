@@ -45,7 +45,8 @@
             "pages": [
               "index",
               "quickstart",
-              "models"
+              "models",
+              "request-compression"
             ]
           },
           {
