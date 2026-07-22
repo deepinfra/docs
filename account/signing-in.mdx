@@ -1,0 +1,71 @@
+---
+title: Signing In
+description: Sign in with Google, GitHub, email & password, or corporate SSO — and what to know about linked accounts.
+icon: right-to-bracket
+---
+
+You can sign in to DeepInfra at [deepinfra.com/login](https://deepinfra.com/login) with Google, GitHub, email & password, or Corporate SSO. With Google, GitHub, and SSO we create an account on your first login if you don't have one; for email & password there's a [sign-up page](https://deepinfra.com/signup).
+
+## Signing in with Google
+
+If you don't have a DeepInfra account yet, **Continue with Google** creates one automatically. No password is set on the account — you sign in with Google from then on.
+
+### If you already have an account with your Google email
+
+Signing in with Google automatically links your Google identity to the existing account — there is no confirmation prompt. What happens to the account depends on whether its email was already verified:
+
+- **Verified** — nothing changes: the Google link is simply added, and password sign-in keeps working.
+- **Not verified** — the account is treated as unclaimed: your password is removed, all active sessions are signed out, and your name and picture are replaced by your Google profile.
+
+<Warning>
+To keep your password and profile, verify your email address **before** your first Google sign-in.
+</Warning>
+
+### Changing your email or unlinking Google
+
+Your email address can't be changed while Google is linked — the settings show "Linked from your Google account". There is currently no self-serve way to unlink Google either; contact us at [feedback@deepinfra.com](mailto:feedback@deepinfra.com) to unlink or change your email.
+
+## Signing in with GitHub
+
+Clicking **Continue with GitHub** creates (or signs in to) an account tied to your GitHub identity, using your primary verified GitHub email. GitHub sign-in never links to an existing Google or email account — see the [FAQ](#faq).
+
+### Changing your email
+
+Your account email can only be one of the emails associated with your GitHub account — the email dropdown in the dashboard settings is synced from your GitHub profile. To use a different email, add it to your GitHub account first; a few minutes later it will appear in the dropdown.
+
+## Email and password
+
+Create an account at [deepinfra.com/signup](https://deepinfra.com/signup). You'll receive a verification email — verify promptly: unverified accounts have limited access and can be [claimed by a Google sign-in](#if-you-already-have-an-account-with-your-google-email) with the same email.
+
+- Signing up with an email that's already in use fails — sign in to the existing account instead.
+- Forgot your password? Use the reset link on the login page.
+- Accounts created via Google have no password, so password sign-in fails with "Invalid email or password" — use **Continue with Google** instead.
+
+## Corporate SSO
+
+Teams using Okta sign in via the **Corporate SSO** button — see [Okta SSO](/account/okta-sso) for setup and sign-in steps.
+
+## Joining via a team invite
+
+Team invites can be accepted with Google or email & password, and only when signing up — the new account automatically joins the inviting team. An existing account can't join a team (see the [FAQ](#faq)).
+
+## Reactivating a deleted account
+
+If you've requested account deletion (in the dashboard account settings) and it hasn't been permanently removed yet, any successful sign-in reactivates the account. If that wasn't intended, contact [feedback@deepinfra.com](mailto:feedback@deepinfra.com).
+
+## FAQ
+
+<AccordionGroup>
+<Accordion title="I signed in, but my API keys, usage, or balance are missing">
+You're probably in a different account than the one you originally signed up with. Sign in again with the method you used the first time — and make sure you always use the same sign-in method.
+
+This can happen because GitHub sign-in has its own account, separate from the Google / email & password one — even when all of them use the same email address. So if you signed up with GitHub but signed in with Google or email (or the other way around), you ended up in a second, empty account.
+</Accordion>
+
+<Accordion title="I opened a team invite link and signed in, but I wasn't added to the team">
+Team invites only work when a **new** account is created. An existing account can't join a team, and the same email can't be on both a personal and a team account (one created via an invite). Your options:
+
+- Request deletion of your existing account (in the dashboard account settings), then email [feedback@deepinfra.com](mailto:feedback@deepinfra.com) so we remove it immediately. Once we confirm it's gone, ask the team owner to re-invite you and sign up through the new link — signing in earlier would just [reactivate the account](#reactivating-a-deleted-account).
+- Sign up with a different email, e.g. `you+team@example.com` — most mail providers deliver it to the same inbox, but it counts as a separate account.
+</Accordion>
+</AccordionGroup>

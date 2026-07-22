@@ -121,6 +121,7 @@
           {
             "group": "Account & Security",
             "pages": [
+              "account/signing-in",
               "account/authentication",
               "account/rate-limits",
               "account/webhooks",
