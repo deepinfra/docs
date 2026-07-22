@@ -88,10 +88,11 @@ Request compression pays off in proportion to how large your request body is:
 </Note>
 
 <Warning>
-  Only set `Content-Encoding: gzip` if the body is **actually** gzip-compressed. Setting the
-  header on an uncompressed body (a common mix-up with charset headers like `utf-8`) will make
-  the request fail. `Content-Encoding` describes compression, not character set — charset
-  belongs in `Content-Type` (e.g. `application/json; charset=utf-8`).
+  `Content-Encoding` describes compression, not character set. The only value that does anything
+  here is `gzip`, and only when the body is genuinely gzip-compressed — setting
+  `Content-Encoding: gzip` on a body that isn't gzip will make the request fail. A charset such as
+  `utf-8` belongs in `Content-Type` (e.g. `application/json; charset=utf-8`), not in
+  `Content-Encoding` (where it is simply ignored).
 </Warning>
 
 The official OpenAI SDKs do not compress request bodies. To send compressed requests, use a
