@@ -119,13 +119,18 @@
             ]
           },
           {
+            "group": "API Features",
+            "pages": [
+              "account/webhooks",
+              "request-compression"
+            ]
+          },
+          {
             "group": "Account & Security",
             "pages": [
               "account/signing-in",
               "account/authentication",
               "account/rate-limits",
-              "account/webhooks",
-              "account/request-compression",
               "account/okta-sso",
               "account/data-privacy",
               "account/subprocessors"
