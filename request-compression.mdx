@@ -1,0 +1,88 @@
+---
+title: Request Compression
+description: Compress large request bodies with gzip to cut upload bandwidth and latency.
+icon: file-zipper
+---
+
+DeepInfra accepts **gzip-compressed request bodies**. For large payloads — long chat
+histories, big embeddings batches, sizable inputs — compressing the request shrinks the
+bytes you upload (JSON and text typically compress 4–8×), which lowers your egress and can
+speed up requests over slower or metered connections.
+
+To use it, gzip the request body and set the `Content-Encoding: gzip` header. It works on
+**every** endpoint (chat completions, embeddings, and the rest), including requests whose
+response streams back — the request body is a single upload regardless of how the response
+is returned.
+
+<CodeGroup>
+
+```bash cURL
+# Pipe the JSON body through gzip and send it with Content-Encoding: gzip
+echo '{
+  "model": "deepseek-ai/DeepSeek-V3",
+  "messages": [{"role": "user", "content": "Hello!"}]
+}' | gzip | curl "https://api.deepinfra.com/v1/openai/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "Content-Encoding: gzip" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  --data-binary @-
+```
+
+```python Python
+import gzip
+import json
+import requests
+
+payload = json.dumps({
+    "model": "deepseek-ai/DeepSeek-V3",
+    "messages": [{"role": "user", "content": "Hello!"}],
+}).encode("utf-8")
+
+response = requests.post(
+    "https://api.deepinfra.com/v1/openai/chat/completions",
+    data=gzip.compress(payload),
+    headers={
+        "Content-Type": "application/json",
+        "Content-Encoding": "gzip",
+        "Authorization": "Bearer $DEEPINFRA_TOKEN",
+    },
+)
+print(response.json())
+```
+
+```javascript JavaScript
+import { gzipSync } from "node:zlib";
+
+const payload = JSON.stringify({
+  model: "deepseek-ai/DeepSeek-V3",
+  messages: [{ role: "user", content: "Hello!" }],
+});
+
+const response = await fetch("https://api.deepinfra.com/v1/openai/chat/completions", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Content-Encoding": "gzip",
+    Authorization: "Bearer $DEEPINFRA_TOKEN",
+  },
+  body: gzipSync(payload),
+});
+console.log(await response.json());
+```
+
+</CodeGroup>
+
+## When it helps
+
+Request compression pays off in proportion to how large your request body is:
+
+- **Worth it** for large bodies — long conversations, large embeddings batches, big inputs —
+  where trimming the upload meaningfully cuts bandwidth and transfer time.
+- **Not worth it** for small requests (a short prompt). gzip adds a small header and a little
+  CPU on both ends, so for tiny bodies there's nothing to gain.
+
+<Note>
+  **gzip only.** `Content-Encoding: gzip` is the only supported request compression. Other
+  codings (`deflate`, `br`, `zstd`) are not decompressed — a body compressed with those will
+  fail to parse. Use `gzip`.
+</Note>
