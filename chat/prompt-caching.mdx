@@ -158,6 +158,10 @@ Requests with the same `prompt_cache_key` and model will share a KV cache, even 
 |-----------|------|-------------|
 | `prompt_cache_key` | `string` | An explicit key for cache lookup. Requests with the same key and model share a KV cache. |
 
+<Note>
+Need a prefix to stay cached for a guaranteed window? [Prompt cache retention](/chat/prompt-cache-retention) lets you retain a prompt for 5 minutes or 1 hour with `prompt_cache_options`, billed at a cache-write premium upfront and reused at the cache-read rate.
+</Note>
+
 ## Notes
 
 - Prompt caching is available on supported models — check the model page for details
