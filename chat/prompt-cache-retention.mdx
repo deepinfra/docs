@@ -85,6 +85,10 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
 
 Retention is scoped to your account **and** `prompt_cache_key`. It works with streaming and non-streaming, chat and text-completions.
 
+<Warning>
+You're charged a cache write each time a request writes new blocks **or extends the window** — not just on the first request. For example, send the same prompt with a `ttl` twice and the second call extends the window, so it's charged as another cache write. Send a `ttl` only to open the window or when you deliberately want to extend it; for ordinary reuse, omit `ttl` and pay the cheaper cache-read rate.
+</Warning>
+
 ## Cache breakpoints
 
 Most prompts are a stable prefix (system instructions, tools, a document) followed by a variable tail. Mark where the reusable prefix ends with a `prompt_cache_breakpoint` on a message content part — retention then applies to everything up to and including that part, and ignores the variable remainder, so the retained cache stays stable across requests even as the question changes.
