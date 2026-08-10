@@ -57,6 +57,7 @@
               "chat/structured-outputs",
               "chat/vision",
               "chat/prompt-caching",
+              "chat/prompt-cache-retention",
               "chat/reasoning",
               "chat/log-probs"
             ]
