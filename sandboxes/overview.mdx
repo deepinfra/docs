@@ -37,19 +37,12 @@ That's the whole lifecycle: create, run, move files, stop or terminate.
 
 ## Plans and pricing
 
-If you don't pass `plan`, you get `medium` — not the cheapest tier. Disk scales with plan and is capped at 40 GB for the top tiers.
+Sandboxes come in multiple plan sizes, from a quick script to a heavier data-processing run. If you don't pass `plan`, you get `medium` — not the cheapest tier. Disk scales with plan.
 
-| Plan | vCPU | RAM | Disk | Price |
-|------|------|-----|------|-------|
-| `nano` | 1 | 1 GB | 5 GB | $0.054/hour |
-| `small` | 2 | 2 GB | 10 GB | $0.107/hour |
-| `medium` (default) | 2 | 4 GB | 20 GB | $0.134/hour |
-| `large` | 4 | 8 GB | 40 GB | $0.268/hour |
-| `xlarge` | 4 | 16 GB | 40 GB | $0.375/hour |
-| `2xlarge` | 8 | 16 GB | 40 GB | $0.536/hour |
-| `4xlarge` | 8 | 32 GB | 40 GB | $0.750/hour |
+For current plan specs (vCPU, RAM, disk) and hourly pricing, don't hardcode numbers — check the live catalog:
 
-Rates can change — call the [catalog endpoint](#http-api) or `Sandbox.catalog()` to get current specs and pricing programmatically instead of hardcoding these numbers, or see the same table in the [dashboard](https://deepinfra.com/dash/sandboxes#catalog).
+- Dashboard: [deepinfra.com/dash/sandboxes#catalog](https://deepinfra.com/dash/sandboxes#catalog)
+- API: `GET /v1/sandboxes/catalog` (see [HTTP API](#http-api)), or `Sandbox.catalog()` in the Python SDK
 
 Billing is per-second with no minimum, and only runs while a sandbox is `creating`, `starting`, `running`, or `stopping` — a `stopped` sandbox costs nothing. Because the meter starts while the microVM is still booting and keeps running for the few seconds it takes to save your disk on `stop()`, per-call cost is "wall clock the sandbox occupied capacity," not strictly "wall clock you could run commands."
 
@@ -109,7 +102,7 @@ Every sandbox boots as its own microVM — via Kata Containers running on QEMU/K
 - **Active sandboxes** — up to **5 non-stopped sandboxes per account** at a time. `creating`, `starting`, `running`, and `stopping` all count against this; `stopped` doesn't. Going over it returns a `429` (`RateLimitError`, aliased as `TooManySandboxesError` in the SDK) instead of a silent failure.
 - **Fleet capacity** — sandboxes run on a shared fleet, so a capacity crunch across all customers can occasionally return a `503` (`CapacityError`) on creation even when you're well under your own limit. Retry with backoff.
 - **File writes** — `fs.write()` is capped at 100 MiB per call (see above).
-- **Disk** — scales with plan, capped at 40 GB (see [Plans and pricing](#plans-and-pricing)); the container's own disk outside `/workspace` is only a couple GB regardless of plan.
+- **Disk** — scales with plan (see the [catalog](#plans-and-pricing) for exact numbers); the container's own disk outside `/workspace` is only a couple GB regardless of plan.
 
 ## Tags
 
