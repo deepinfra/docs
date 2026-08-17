@@ -69,7 +69,7 @@ A sandbox is subject to three independent clocks:
 Independently, each `exec()` command has its own timeout: 60 seconds by default, up to a hard cap of 30 minutes.
 
 <Warning>
-  A `failed` sandbox is not something to recover from — it is automatically deleted within about **5 minutes**, and unlike a clean `stop()`, its `/workspace` is **not** preserved. Treat `failed` as data loss, not a state to `start()` your way out of.
+  A `failed` sandbox is not something to recover from — it is automatically deleted within about **5 minutes**, and unlike a clean `stop()`, its `/workspace` is **not** preserved. Treat `failed` as data loss, not a state to `start()` your way out of. `GET`/list responses include a `fail_reason` field with why it failed — useful for debugging, though the Python SDK doesn't expose it as an attribute yet, so read it from the raw HTTP response if you need it.
 </Warning>
 
 ## Filesystem and persistence
@@ -78,11 +78,7 @@ The persistence model is narrower than "it's a VM, everything sticks around" —
 
 **Only `/workspace` survives a `stop()` / `start()` cycle.** Everything else — packages installed outside it, environment changes, background processes, anything written to `/tmp`, `/root`, or elsewhere — is gone the moment you `start()` again. That's because `start()` always boots a **fresh container from the base image**; it never resumes a suspended VM. Only `/workspace`'s contents come back. The rest of the container's own disk is small (a couple GB) regardless of plan, so treat `/workspace` as the one place anything you need to keep should live — don't count on `pip install`-ed packages surviving a stop.
 
-`fs.read()` and `fs.write()` enforce this directly: paths outside `/workspace` are rejected, not silently redirected.
-
-<Warning>
-  A path outside `/workspace` currently comes back as a generic server error (HTTP `500`) rather than `400`/`403` — don't rely on the status code alone to detect this case, check the error message text. `fs.write()` is also capped at 100 MiB per call (`413` / `ContentTooLargeError`).
-</Warning>
+`fs.read()` and `fs.write()` enforce this directly: paths outside `/workspace` are rejected with `400` (`BadRequestError`), not silently redirected. Reading a path that doesn't exist returns `404`; reading something that isn't a regular file (a directory, for instance) also returns `400`. Both directions are capped at 100 MiB per call (`413` / `ContentTooLargeError`) — the same limit applies whether you're writing or reading.
 
 `exec()` isn't restricted the same way — a shell command can write anywhere on disk — but only what lands under `/workspace` will be there the next time you `start()`.
 
@@ -101,7 +97,7 @@ Every sandbox boots as its own microVM — via Kata Containers running on QEMU/K
 
 - **Active sandboxes** — up to **5 non-stopped sandboxes per account** at a time. `creating`, `starting`, `running`, and `stopping` all count against this; `stopped` doesn't. Going over it returns a `429` (`RateLimitError`, aliased as `TooManySandboxesError` in the SDK) instead of a silent failure.
 - **Fleet capacity** — sandboxes run on a shared fleet, so a capacity crunch across all customers can occasionally return a `503` (`CapacityError`) on creation even when you're well under your own limit. Retry with backoff.
-- **File writes** — `fs.write()` is capped at 100 MiB per call (see above).
+- **File transfers** — both `fs.write()` and `fs.read()` are capped at 100 MiB per call (see above).
 - **Disk** — scales with plan (see the [catalog](#plans-and-pricing) for exact numbers); the container's own disk outside `/workspace` is only a couple GB regardless of plan.
 
 ## Tags
@@ -124,14 +120,14 @@ Tags are set once at creation — there's no endpoint to update them afterward.
 
 | Cause | HTTP status | SDK exception |
 |-------|--------------|----------------|
+| Malformed request (bad/outside-`/workspace` path, empty command, timeout out of range) | `400` | `BadRequestError` |
 | Missing/invalid API key | `401` | `AuthenticationError` |
 | Account suspended | `402` | *(none yet — generic `APIStatusError`)* |
-| Not permitted | `403` | `PermissionDeniedError` |
 | Sandbox not found (or not yours) | `404` | `NotFoundError` |
 | Wrong state for this operation | `409` | `ConflictError` |
-| `fs.write()` body over 100 MiB | `413` | `ContentTooLargeError` |
+| File transfer body over 100 MiB (either direction) | `413` | `ContentTooLargeError` |
 | Over the 5-active-sandboxes cap | `429` | `RateLimitError` / `TooManySandboxesError` |
-| Shared fleet capacity exhausted | `503` | `CapacityError` |
+| Shared fleet capacity exhausted, or creation temporarily disabled | `503` | `CapacityError` |
 | Internal error | `5xx` | `InternalServerError` |
 
 The Python SDK adds a few client-side exceptions for conditions that aren't a single HTTP response: `SandboxTimeoutError` (waiting for a state transition took too long), `SandboxFailedError` (the sandbox went to `failed` while you were waiting on it), `SandboxExecError` (the exec stream ended without a return code), and `CommandFailedError` (raised by `.check()` on a non-zero exit).
@@ -223,7 +219,7 @@ curl -N -X POST https://api.deepinfra.com/v1/sandboxes/{sandbox_id}/exec \
   This streamed response is always HTTP `200` once it starts — a mid-command failure (timeout, oversized output, and so on) shows up as `{"error": ...}` in the terminal line, not as an HTTP error status. Check the last line, not just the status code.
 </Note>
 
-Move files in and out — both are scoped to `/workspace`:
+Move files in and out — both are scoped to `/workspace` and capped at 100 MiB per call:
 
 ```bash
 curl -X PUT "https://api.deepinfra.com/v1/sandboxes/{sandbox_id}/fs/content?path=/workspace/in.csv" \
@@ -271,8 +267,8 @@ It moves to `failed` and is deleted within about 5 minutes — `/workspace` is *
 **Can a sandbox reach other sandboxes, or my own infrastructure?**
 No. It can reach the public internet, but not other sandboxes and not DeepInfra's internal infrastructure.
 
-**Why did my `fs.read()`/`fs.write()` call fail with a server error?**
-Most likely the path was outside `/workspace` — that's currently surfaced as an HTTP `500` rather than a `400`. Check the error message text.
+**Why did my `fs.read()`/`fs.write()` call fail?**
+Most likely the path was outside `/workspace`, which comes back as `400`. A `404` means the file doesn't exist; `413` means the file is over the 100 MiB transfer cap.
 
 **What happens if my account is suspended?**
 Sandbox creation and start/stop calls are blocked (`402`) while your account is suspended — for example, when your balance runs out. Consider [Automatic Top-Up](https://deepinfra.com/dash/billing) if you're running unattended jobs.
