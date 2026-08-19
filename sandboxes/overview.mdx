@@ -280,7 +280,7 @@ No. It can reach the public internet, but not other sandboxes and not DeepInfra'
 Most likely the path was outside `/workspace`, which comes back as `400`. A `404` means the file doesn't exist; `413` means the file is over the 100 MiB transfer cap.
 
 **What happens if my account is suspended?**
-Sandbox creation and start/stop calls are blocked (`402`) while your account is suspended — for example, when your balance runs out. Consider [Automatic Top-Up](https://deepinfra.com/dash/billing) if you're running unattended jobs.
+Sandbox creation, `start()`, and any exec/file-transfer calls are blocked (`402`) while your account is suspended — for example, when your balance runs out. `stop()` and `terminate()` still work, so you can shut down a sandbox (and its billing) even while suspended. Consider [Automatic Top-Up](https://deepinfra.com/dash/billing) if you're running unattended jobs.
 
 **Where do I see what my sandboxes are costing me?**
 On the [Usage](https://deepinfra.com/dash/usage) page.
