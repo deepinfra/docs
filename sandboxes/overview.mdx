@@ -6,6 +6,8 @@ icon: cube
 
 Sandboxes give you an isolated Linux microVM on demand, ready to run code the moment it boots and torn down the moment you're done with it. They're built for agents and pipelines that need to execute arbitrary or untrusted code without you having to build and operate that infrastructure yourself.
 
+Sandboxes are ephemeral by design: they're short-lived, and data inside them is not backed up or guaranteed to persist while they run. Treat a sandbox as scratch space — write anything you want to keep to external storage before it shuts down.
+
 Manage sandboxes at [Dashboard → Sandboxes](https://deepinfra.com/dash/sandboxes), or drive them entirely from the [Python SDK](#python-sdk) or [HTTP API](#http-api).
 
 <Note>
@@ -63,7 +65,7 @@ Operations are tied to state: `exec()` and `fs.read()`/`fs.write()` require `run
 A sandbox is subject to three independent clocks:
 
 - **Idle timeout** — configurable per sandbox with `timeout` at creation (an hour, by default, if you don't pass one, and there's currently no way to disable it). Idle time is measured from when your **last call finished**, not when it started, so a single command that runs longer than the idle timeout can have its sandbox stopped out from under it mid-execution. If a job might take a while, set `timeout` generously (up to the 30-minute per-command cap) rather than relying on the default.
-- **24-hour hard age limit** — a sandbox auto-stops 24 hours after **creation**, and that clock is never reset by `stop()`/`start()`. Create a sandbox, stop it after ten minutes, come back the next day, and it can auto-stop again shortly after you restart it — simply because it's more than a day old by wall-clock time. If you need something to outlive a day of calendar time, `terminate()` and recreate it rather than stop/start-ing the same one indefinitely.
+- **24-hour running limit** — a sandbox auto-stops after 24 continuous hours of `running`. This resets every time you `start()` it, so stopping and restarting doesn't carry over — only the current run counts toward the 24h cap. You can `stop()`/`start()` the same sandbox indefinitely; there's no need to `terminate()` and recreate it just to reset the clock.
 - **Retention after stop** — a `stopped` sandbox has up to **7 days** to be `start()`-ed again before it's permanently deleted, `/workspace` included.
 
 Independently, each `exec()` command has its own timeout: 60 seconds by default, up to a hard cap of 30 minutes.
@@ -148,9 +150,16 @@ A few things worth knowing beyond the basic example:
 - Every network method has an `a`-prefixed async twin (`acreate`, `aexec`, `aterminate`, and so on), so orchestrating many sandboxes at once is a normal `asyncio` program:
 
 ```python
-sb = await Sandbox.acreate(plan="small")
-r = await sb.aexec("uname", "-a")
-await sb.aterminate()
+import asyncio
+from deepinfra import Sandbox
+
+async def main():
+    sb = await Sandbox.acreate(plan="small")
+    r = await sb.aexec("uname", "-a")
+    print(r.stdout)
+    await sb.aterminate()
+
+asyncio.run(main())
 ```
 
 - A sandbox terminates automatically when used as a context manager:
@@ -158,7 +167,7 @@ await sb.aterminate()
 ```python
 with Sandbox.create(plan="small") as sb:
     sb.run_python("open('/workspace/out.txt', 'w').write('hi')")
-    print(sb.fs.read("/workspace/out.txt"))
+    print(sb.fs.read("/workspace/out.txt"))   # b'hi' -- fs.read() returns raw bytes, not str
 ```
 
 - For large scripts, write the file and run it rather than passing code inline:
@@ -259,7 +268,7 @@ See the [API Reference](https://docs.deepinfra.com/api-reference) for full schem
 Nothing under `/workspace` is lost — it's preserved and restored when you `start()` again. Everything else in the container (installed packages, environment changes, `/tmp`, `/root`) is reset, because `start()` boots a fresh container rather than resuming the old one.
 
 **How long does a sandbox actually live?**
-Three independent clocks apply: it idles out after its configured `timeout` (1 hour by default) with no activity, it auto-stops 24 hours after creation regardless of stop/start cycles in between, and once stopped it's permanently deleted after 7 days if you don't start it again.
+Three independent clocks apply: it idles out after its configured `timeout` (1 hour by default) with no activity, it auto-stops after 24 continuous hours of `running` (this resets on every `start()`, so repeated stop/start cycles don't add up), and once stopped it's permanently deleted after 7 days if you don't start it again.
 
 **What happens if my sandbox crashes?**
 It moves to `failed` and is deleted within about 5 minutes — `/workspace` is **not** preserved in this case. Only a clean `stop()` guarantees your data survives.
