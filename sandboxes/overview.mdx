@@ -1,0 +1,286 @@
+---
+title: Sandboxes
+description: Isolated Linux microVMs for running untrusted code — create one with a single API call, run commands, move files in and out, and tear it down when you're done.
+icon: cube
+---
+
+Sandboxes give you an isolated Linux microVM on demand, ready to run code the moment it boots and torn down the moment you're done with it. They're built for agents and pipelines that need to execute arbitrary or untrusted code without you having to build and operate that infrastructure yourself.
+
+Sandboxes are ephemeral by design: they're short-lived, and data inside them is not backed up or guaranteed to persist while they run. Treat a sandbox as scratch space — write anything you want to keep to external storage before it shuts down.
+
+Manage sandboxes at [Dashboard → Sandboxes](https://deepinfra.com/dash/sandboxes), or drive them entirely from the [Python SDK](#python-sdk) or [HTTP API](#http-api).
+
+<Note>
+  This page focuses on the details that aren't obvious from the API surface alone — what actually survives a restart, how long a sandbox lives, and where the sharp edges are. If you only read one section, read [Filesystem and persistence](#filesystem-and-persistence).
+</Note>
+
+## Quickstart
+
+```python
+from deepinfra import Sandbox
+
+sb = Sandbox.create(plan="medium", timeout="10m")   # blocks until running
+
+r = sb.exec("bash", "-c", "pip install pandas && python -c 'import pandas; print(pandas.__version__)'")
+print(r.stdout, r.stderr, r.returncode)
+
+out = sb.run_python("print(21 * 2)").check()         # .check() raises on non-zero exit
+print(out.stdout)                                    # "42"
+
+sb.fs.write("/workspace/in.csv", b"a,b\n1,2\n")  # fs.read/write only reach inside /workspace
+data = sb.fs.read("/workspace/in.csv")
+
+sb.stop()        # frees compute, keeps /workspace
+sb.start()       # resumes with /workspace intact, everything else reset
+sb.terminate()   # deletes the sandbox, including /workspace
+```
+
+That's the whole lifecycle: create, run, move files, stop or terminate.
+
+## Plans and pricing
+
+Sandboxes come in multiple plan sizes, from a quick script to a heavier data-processing run. If you don't pass `plan`, you get `medium` — not the cheapest tier. Disk scales with plan.
+
+For current plan specs (vCPU, RAM, disk) and hourly pricing, don't hardcode numbers — check the live catalog:
+
+- Dashboard: [deepinfra.com/dash/sandboxes#catalog](https://deepinfra.com/dash/sandboxes#catalog)
+- API: `GET /v1/sandboxes/catalog` (see [HTTP API](#http-api)), or `Sandbox.catalog()` in the Python SDK
+
+Billing is per-second with no minimum, and only runs while a sandbox is `creating`, `starting`, `running`, or `stopping` — a `stopped` sandbox costs nothing. Because the meter starts while the microVM is still booting and keeps running for the few seconds it takes to save your disk on `stop()`, per-call cost is "wall clock the sandbox occupied capacity," not strictly "wall clock you could run commands."
+
+## Lifecycle and timeouts
+
+| State | Description |
+|-------|--------------|
+| `creating` | The sandbox is being provisioned |
+| `starting` | A fresh container is booting from the base image |
+| `running` | The sandbox is active and accepting commands |
+| `stopping` | The sandbox is shutting down; `/workspace` is being saved |
+| `stopped` | Shut down — not billed, `/workspace` preserved |
+| `failed` | Hit an unrecoverable error — **not** recoverable, see below |
+| `deleted` | Permanently removed (via `terminate()`, or automatic cleanup) |
+
+Operations are tied to state: `exec()` and `fs.read()`/`fs.write()` require `running`; `stop()` requires `running` or `starting`; `start()` requires `stopped`. Calling one from the wrong state returns a `409`/`ConflictError`.
+
+A sandbox is subject to three independent clocks:
+
+- **Idle timeout** — configurable per sandbox with `timeout` at creation (an hour, by default, if you don't pass one, and there's currently no way to disable it). Idle time is measured from when your **last call finished**, not when it started, so a single command that runs longer than the idle timeout can have its sandbox stopped out from under it mid-execution. If a job might take a while, set `timeout` generously (up to the 30-minute per-command cap) rather than relying on the default.
+- **24-hour running limit** — a sandbox auto-stops after 24 continuous hours of `running`. This resets every time you `start()` it, so stopping and restarting doesn't carry over — only the current run counts toward the 24h cap. You can `stop()`/`start()` the same sandbox indefinitely; there's no need to `terminate()` and recreate it just to reset the clock.
+- **Retention after stop** — a `stopped` sandbox has up to **7 days** to be `start()`-ed again before it's permanently deleted, `/workspace` included.
+
+Independently, each `exec()` command has its own timeout: 60 seconds by default, up to a hard cap of 30 minutes.
+
+<Warning>
+  A `failed` sandbox is not something to recover from — it is automatically deleted within about **5 minutes**, and unlike a clean `stop()`, its `/workspace` is **not** preserved. Treat `failed` as data loss, not a state to `start()` your way out of. `GET`/list responses include a `fail_reason` field with why it failed — useful for debugging, though the Python SDK doesn't expose it as an attribute yet, so read it from the raw HTTP response if you need it.
+</Warning>
+
+## Filesystem and persistence
+
+The persistence model is narrower than "it's a VM, everything sticks around" — this is the part worth reading closely.
+
+**Only `/workspace` survives a `stop()` / `start()` cycle.** Everything else — packages installed outside it, environment changes, background processes, anything written to `/tmp`, `/root`, or elsewhere — is gone the moment you `start()` again. That's because `start()` always boots a **fresh container from the base image**; it never resumes a suspended VM. Only `/workspace`'s contents come back. The rest of the container's own disk is small (a couple GB) regardless of plan, so treat `/workspace` as the one place anything you need to keep should live — don't count on `pip install`-ed packages surviving a stop.
+
+`fs.read()` and `fs.write()` enforce this directly: paths outside `/workspace` are rejected with `400` (`BadRequestError`), not silently redirected. Reading a path that doesn't exist returns `404`; reading something that isn't a regular file (a directory, for instance) also returns `400`. Both directions are capped at 100 MiB per call (`413` / `ContentTooLargeError`) — the same limit applies whether you're writing or reading.
+
+`exec()` isn't restricted the same way — a shell command can write anywhere on disk — but only what lands under `/workspace` will be there the next time you `start()`.
+
+**Persistence is also conditional on a clean stop.** If a sandbox crashes or is marked unhealthy — a node issue, an out-of-memory kill, anything that isn't you calling `stop()` — it goes to `failed`, and its `/workspace` is **not** preserved; the sandbox is torn down within a few minutes and any unsaved work in it is gone. Only an explicit `stop()` guarantees your data comes back.
+
+## Isolation and networking
+
+Every sandbox boots as its own microVM — via Kata Containers running on QEMU/KVM — with its own kernel and its own virtualized hardware boundary, not a namespaced slice of a host shared with other tenants. Networking is locked down to match:
+
+- A sandbox can reach the public internet (so `pip install` works), but accepts **no inbound connections** at all.
+- It can't reach other sandboxes or DeepInfra's internal infrastructure.
+- Egress and ingress are each capped at **200 Mbit/s**.
+- Outbound SMTP (ports 25, 465, 587) is blocked.
+
+## Limits and quotas
+
+- **Active sandboxes** — up to **5 non-stopped sandboxes per account** at a time. `creating`, `starting`, `running`, and `stopping` all count against this; `stopped` doesn't. Going over it returns a `429` (`RateLimitError`, aliased as `TooManySandboxesError` in the SDK) instead of a silent failure.
+- **Fleet capacity** — sandboxes run on a shared fleet, so a capacity crunch across all customers can occasionally return a `503` (`CapacityError`) on creation even when you're well under your own limit. Retry with backoff.
+- **File transfers** — both `fs.write()` and `fs.read()` are capped at 100 MiB per call (see above).
+- **Disk** — scales with plan (see the [catalog](#plans-and-pricing) for exact numbers); the container's own disk outside `/workspace` is only a couple GB regardless of plan.
+
+## Tags
+
+Attach your own string key/value tags at creation time for bookkeeping:
+
+```python
+sb = Sandbox.create(plan="small", tags={"job": "etl-42"})
+```
+
+Tags come back on every lookup (`GET`, list) and can be used to filter client-side:
+
+```python
+etl_boxes = Sandbox.list(tags={"job": "etl-42"})
+```
+
+Tags are set once at creation — there's no endpoint to update them afterward.
+
+## Errors
+
+| Cause | HTTP status | SDK exception |
+|-------|--------------|----------------|
+| Malformed request (bad/outside-`/workspace` path, empty command, timeout out of range) | `400` | `BadRequestError` |
+| Missing/invalid API key | `401` | `AuthenticationError` |
+| Account suspended | `402` | *(none yet — generic `APIStatusError`)* |
+| Sandbox not found (or not yours) | `404` | `NotFoundError` |
+| Wrong state for this operation | `409` | `ConflictError` |
+| File transfer body over 100 MiB (either direction) | `413` | `ContentTooLargeError` |
+| Over the 5-active-sandboxes cap | `429` | `RateLimitError` / `TooManySandboxesError` |
+| Shared fleet capacity exhausted, or creation temporarily disabled | `503` | `CapacityError` |
+| Internal error | `5xx` | `InternalServerError` |
+
+The Python SDK adds a few client-side exceptions for conditions that aren't a single HTTP response: `SandboxTimeoutError` (waiting for a state transition took too long), `SandboxFailedError` (the sandbox went to `failed` while you were waiting on it), `SandboxExecError` (the exec stream ended without a return code), and `CommandFailedError` (raised by `.check()` on a non-zero exit).
+
+## Python SDK
+
+```bash
+pip install deepinfra
+```
+
+Set `DEEPINFRA_API_KEY` (the same key you use for inference, from [deepinfra.com/dash/api_keys](https://deepinfra.com/dash/api_keys)) and you're executing code in an isolated microVM in a few lines — see the [Quickstart](#quickstart) above.
+
+A few things worth knowing beyond the basic example:
+
+- `timeout` accepts plain seconds (`600`) or a duration string (`"90s"`, `"10m"`, `"2h"`, `"1h30m"`).
+- `Sandbox.create()` blocks until the sandbox is `running` by default. Pass `wait=False` to get it back immediately in whatever state it's in, or `wait_timeout=` to change how long to wait.
+- `Sandbox.from_id("sb-...")` reattaches to a sandbox by ID from anywhere in your code — you're not stuck driving it from the process that created it.
+- Every network method has an `a`-prefixed async twin (`acreate`, `aexec`, `aterminate`, and so on), so orchestrating many sandboxes at once is a normal `asyncio` program:
+
+```python
+import asyncio
+from deepinfra import Sandbox
+
+async def main():
+    sb = await Sandbox.acreate(plan="small")
+    r = await sb.aexec("uname", "-a")
+    print(r.stdout)
+    await sb.aterminate()
+
+asyncio.run(main())
+```
+
+- A sandbox terminates automatically when used as a context manager:
+
+```python
+with Sandbox.create(plan="small") as sb:
+    sb.run_python("open('/workspace/out.txt', 'w').write('hi')")
+    print(sb.fs.read("/workspace/out.txt"))   # b'hi' -- fs.read() returns raw bytes, not str
+```
+
+- For large scripts, write the file and run it rather than passing code inline:
+
+```python
+sb.fs.write("/workspace/script.py", open("script.py").read())
+sb.exec("python3", "/workspace/script.py", timeout="30m")
+```
+
+**Coming soon:** `exec_stream()` for live command output, `snapshot()` / `Sandbox.from_snapshot()` for point-in-time snapshots you control, `expose_port()`, and `fs.upload_dir()`.
+
+## HTTP API
+
+Everything above is also available directly over HTTP. Authenticate with your [API key](/account/authentication).
+
+Create a sandbox:
+
+```bash
+curl -X POST https://api.deepinfra.com/v1/sandboxes \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "plan": "medium",
+    "tags": {"job": "etl-42"},
+    "timeout_seconds": 600
+  }'
+```
+
+```json
+{"sandbox_id": "sb-xxxxxxxxxxxxxxxx"}
+```
+
+Get or list sandboxes:
+
+```bash
+curl https://api.deepinfra.com/v1/sandboxes/{sandbox_id} \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+
+curl https://api.deepinfra.com/v1/sandboxes \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+```
+
+Run a command — the response is streamed as `application/x-ndjson`, one JSON object per line, ending in exactly one terminal line (`{"returncode": N}` on completion, or `{"error": "..."}` if the command timed out or otherwise couldn't finish):
+
+```bash
+curl -N -X POST https://api.deepinfra.com/v1/sandboxes/{sandbox_id}/exec \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"command": ["bash", "-c", "echo hi"], "timeout_seconds": 60}'
+```
+
+```
+{"stdout": "hi\n"}
+{"returncode": 0}
+```
+
+<Note>
+  This streamed response is always HTTP `200` once it starts — a mid-command failure (timeout, oversized output, and so on) shows up as `{"error": ...}` in the terminal line, not as an HTTP error status. Check the last line, not just the status code.
+</Note>
+
+Move files in and out — both are scoped to `/workspace` and capped at 100 MiB per call:
+
+```bash
+curl -X PUT "https://api.deepinfra.com/v1/sandboxes/{sandbox_id}/fs/content?path=/workspace/in.csv" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Content-Type: application/octet-stream" \
+  --data-binary $'a,b\n1,2\n'
+
+curl "https://api.deepinfra.com/v1/sandboxes/{sandbox_id}/fs/content?path=/workspace/in.csv" \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+```
+
+Stop, start, or terminate:
+
+```bash
+curl -X POST https://api.deepinfra.com/v1/sandboxes/{sandbox_id}/stop \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+
+curl -X POST https://api.deepinfra.com/v1/sandboxes/{sandbox_id}/start \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+
+curl -X DELETE https://api.deepinfra.com/v1/sandboxes/{sandbox_id} \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+```
+
+List available plans and current pricing:
+
+```bash
+curl https://api.deepinfra.com/v1/sandboxes/catalog \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+```
+
+See the [API Reference](https://docs.deepinfra.com/api-reference) for full schemas.
+
+## FAQ
+
+**What happens to my data when I stop a sandbox?**
+Nothing under `/workspace` is lost — it's preserved and restored when you `start()` again. Everything else in the container (installed packages, environment changes, `/tmp`, `/root`) is reset, because `start()` boots a fresh container rather than resuming the old one.
+
+**How long does a sandbox actually live?**
+Three independent clocks apply: it idles out after its configured `timeout` (1 hour by default) with no activity, it auto-stops after 24 continuous hours of `running` (this resets on every `start()`, so repeated stop/start cycles don't add up), and once stopped it's permanently deleted after 7 days if you don't start it again.
+
+**What happens if my sandbox crashes?**
+It moves to `failed` and is deleted within about 5 minutes — `/workspace` is **not** preserved in this case. Only a clean `stop()` guarantees your data survives.
+
+**Can a sandbox reach other sandboxes, or my own infrastructure?**
+No. It can reach the public internet, but not other sandboxes and not DeepInfra's internal infrastructure.
+
+**Why did my `fs.read()`/`fs.write()` call fail?**
+Most likely the path was outside `/workspace`, which comes back as `400`. A `404` means the file doesn't exist; `413` means the file is over the 100 MiB transfer cap.
+
+**What happens if my account is suspended?**
+Sandbox creation, `start()`, and any exec/file-transfer calls are blocked (`402`) while your account is suspended — for example, when your balance runs out. `stop()` and `terminate()` still work, so you can shut down a sandbox (and its billing) even while suspended. Consider [Automatic Top-Up](https://deepinfra.com/dash/billing) if you're running unattended jobs.
+
+**Where do I see what my sandboxes are costing me?**
+On the [Usage](https://deepinfra.com/dash/usage) page.
