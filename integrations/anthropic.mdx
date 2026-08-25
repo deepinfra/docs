@@ -32,6 +32,8 @@ You can also pass `anthropic-version` and `anthropic-beta` headers as needed.
 
 ## Using the Anthropic SDK
 
+### Installation
+
 <CodeGroup>
 
 ```bash Python
@@ -44,6 +46,10 @@ npm install @anthropic-ai/sdk
 
 </CodeGroup>
 
+### Create a message
+
+Point the client at the DeepInfra endpoint and pass a DeepInfra model name:
+
 <CodeGroup>
 
 ```python Python
@@ -55,7 +61,7 @@ client = anthropic.Anthropic(
 )
 
 message = client.messages.create(
-    model="deepseek-ai/DeepSeek-V3",
+    model="zai-org/GLM-5.2",
     max_tokens=1024,
     messages=[
         {"role": "user", "content": "Hello!"}
@@ -74,7 +80,7 @@ const client = new Anthropic({
 });
 
 const message = await client.messages.create({
-  model: "deepseek-ai/DeepSeek-V3",
+  model: "zai-org/GLM-5.2",
   max_tokens: 1024,
   messages: [
     { role: "user", content: "Hello!" },
@@ -90,7 +96,7 @@ curl "https://api.deepinfra.com/anthropic/v1/messages" \
   -H "x-api-key: $DEEPINFRA_TOKEN" \
   -H "anthropic-version: 2023-06-01" \
   -d '{
-      "model": "deepseek-ai/DeepSeek-V3",
+      "model": "zai-org/GLM-5.2",
       "max_tokens": 1024,
       "messages": [
         {
@@ -105,14 +111,77 @@ curl "https://api.deepinfra.com/anthropic/v1/messages" \
 
 ## Using with Claude Code
 
-Claude Code can use DeepInfra as its backend. To keep your normal Claude Code setup untouched, add a dedicated shell function to your `~/.bashrc` or `~/.zshrc`:
+Claude Code can use DeepInfra as its backend. Claude Code exposes four model slots — `opus`, `sonnet`, `fable`, and `haiku` — plus one extra custom entry in the `/model` picker. You map each slot to a DeepInfra model.
+
+### Recommended models
+
+Claude Code's slots are a capability/cost ladder — `haiku` < `sonnet` < `opus` < `fable`. `fable` sits *above* `opus`: it's the slowest and most expensive slot, meant for the hardest long-horizon work. Map DeepInfra models onto it the same way, most capable first:
+
+| Slot | Model | Context | Why |
+|---|---|---|---|
+| `fable` | `moonshotai/Kimi-K3` | 1M | Strongest open-weights agentic coder (Terminal-Bench 2.1 88.3, SWE Marathon 42.0, vendor-stated). Also the priciest of the set by a wide margin, and the slowest to finish — exactly the tradeoff the `fable` slot exists for. |
+| `opus` | `deepseek-ai/DeepSeek-V4-Pro-0813` | 1M | 1.6T-param MoE built for advanced reasoning and long-running agent tasks. The official release, with much stronger agentic behaviour than the preview. Your escalation model when `sonnet` stalls. |
+| `sonnet` | `deepseek-ai/DeepSeek-V4-Flash-0731` | 1M | Daily driver. Near-flagship agentic quality (Terminal-Bench 2.1 82.7, vendor-stated) at a small fraction of the cost of the slots above it, with the full 1M context — the right economics for the model you run all day. |
+| `haiku` | `inclusionAI/Ling-3.0-flash` | 128K | Background tasks. ~400 tok/s and the cheapest of the set — tuned for token efficiency under tight latency and serving-cost budgets. |
+| custom | `zai-org/GLM-5.2` | 1M | Top *third-party-measured* open-weights model on Terminal-Bench 2.0 (81.0%), the closest benchmark to real agentic terminal work. Independently verified rather than vendor-stated — a good second opinion when a task matters and you want a different model family on it. |
+
+All five support prompt caching, which makes cache reads substantially cheaper than fresh input — worth enabling for long agent sessions. See each model's page on [deepinfra.com/models](https://deepinfra.com/models) for current per-token pricing.
+
+<Note>
+  Use the dated slugs — `DeepSeek-V4-Pro-0813` and `DeepSeek-V4-Flash-0731`. The undated `deepseek-ai/DeepSeek-V4-Pro` and `deepseek-ai/DeepSeek-V4-Flash` are the earlier preview checkpoints, which the dated releases supersede.
+</Note>
+
+### Option A: `.claude/settings.json` (recommended)
+
+Instead of exporting environment variables, put the configuration in a Claude Code settings file. Use `~/.claude/settings.json` to apply it to all projects, or `<repo>/.claude/settings.local.json` for a single project (that file is gitignored by default, so your key stays out of version control).
+
+Get an API key at [deepinfra.com/dash/api_keys](https://deepinfra.com/dash/api_keys).
+
+```json .claude/settings.json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://api.deepinfra.com/anthropic",
+    "ANTHROPIC_AUTH_TOKEN": "<YOUR_DEEPINFRA_API_KEY>",
+
+    "ANTHROPIC_DEFAULT_FABLE_MODEL": "moonshotai/Kimi-K3",
+    "ANTHROPIC_DEFAULT_FABLE_MODEL_NAME": "Kimi K3",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek-ai/DeepSeek-V4-Pro-0813",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME": "DeepSeek V4 Pro 0813",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL_NAME": "DeepSeek V4 Flash 0731",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "inclusionAI/Ling-3.0-flash",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME": "Ling 3.0 Flash",
+
+    "ANTHROPIC_CUSTOM_MODEL_OPTION": "zai-org/GLM-5.2",
+    "ANTHROPIC_CUSTOM_MODEL_OPTION_NAME": "GLM-5.2"
+  }
+}
+```
+
+Reload Claude Code (or restart your VS Code window) and all five models show up in the `/model` picker. To go back to Anthropic's own models, delete the `env` block and reload.
+
+Notes on this file:
+
+- `ANTHROPIC_BASE_URL` has **no** `/v1` suffix — Claude Code appends `/v1/messages` itself.
+- `ANTHROPIC_AUTH_TOKEN` is sent as `Authorization: Bearer …`. `ANTHROPIC_API_KEY` (sent as `x-api-key`) works too.
+- Each `*_MODEL_NAME` sets the label shown in the picker; it is cosmetic.
+- `ANTHROPIC_CUSTOM_MODEL_OPTION` adds one extra picker entry. Any other DeepInfra model still works via `/model <name>` as free text.
+- **VS Code extension:** if the picker doesn't pick up the config after a window reload, also add the same variables under `claudeCode.environmentVariables` in your VS Code settings.
+
+### Option B: shell function with environment variables
+
+If you'd rather keep your default Claude Code setup untouched and switch per-invocation, add a dedicated shell function to your `~/.bashrc` or `~/.zshrc`:
 
 ```bash
 deepinfra() {
   export ANTHROPIC_BASE_URL=https://api.deepinfra.com/anthropic
   export ANTHROPIC_AUTH_TOKEN=$DEEPINFRA_TOKEN
-  export ANTHROPIC_MODEL=deepseek-ai/DeepSeek-V3.1-Terminus
-  export ANTHROPIC_DEFAULT_HAIKU_MODEL=Qwen/Qwen3-30B-A3B
+  export ANTHROPIC_MODEL=deepseek-ai/DeepSeek-V4-Flash-0731
+  export ANTHROPIC_DEFAULT_FABLE_MODEL=moonshotai/Kimi-K3
+  export ANTHROPIC_DEFAULT_OPUS_MODEL=deepseek-ai/DeepSeek-V4-Pro-0813
+  export ANTHROPIC_DEFAULT_SONNET_MODEL=deepseek-ai/DeepSeek-V4-Flash-0731
+  export ANTHROPIC_DEFAULT_HAIKU_MODEL=inclusionAI/Ling-3.0-flash
+  export CLAUDE_CODE_SUBAGENT_MODEL=inclusionAI/Ling-3.0-flash
   export CLAUDE_CODE_MAX_OUTPUT_TOKENS=16384
   claude "$@"
 }
@@ -122,31 +191,19 @@ Then run `deepinfra` instead of `claude` to launch Claude Code via DeepInfra. Yo
 
 ### Model override environment variables
 
-Claude Code uses model aliases (`opus`, `sonnet`, `haiku`) internally. You can remap each alias to a DeepInfra model using these environment variables:
+The same variable names work in both options — as JSON keys under `env`, or as shell exports:
 
 | Environment variable | Description | Example |
 |---|---|---|
-| `ANTHROPIC_MODEL` | The primary model Claude Code uses for all tasks | `deepseek-ai/DeepSeek-V3.1-Terminus` |
-| `ANTHROPIC_DEFAULT_OPUS_MODEL` | Model used for the `opus` alias (complex reasoning) | `deepseek-ai/DeepSeek-R1` |
-| `ANTHROPIC_DEFAULT_SONNET_MODEL` | Model used for the `sonnet` alias (daily coding) | `deepseek-ai/DeepSeek-V3.1-Terminus` |
-| `ANTHROPIC_DEFAULT_HAIKU_MODEL` | Model used for the `haiku` alias and background tasks (tab completions, commit messages) | `Qwen/Qwen3-30B-A3B` |
-| `CLAUDE_CODE_SUBAGENT_MODEL` | Model used for subagents (parallel background tasks) | `Qwen/Qwen3-30B-A3B` |
+| `ANTHROPIC_MODEL` | The primary model Claude Code uses for all tasks | `deepseek-ai/DeepSeek-V4-Flash-0731` |
+| `ANTHROPIC_DEFAULT_FABLE_MODEL` | Model used for the `fable` alias (deepest reasoning, slowest, priciest) | `moonshotai/Kimi-K3` |
+| `ANTHROPIC_DEFAULT_OPUS_MODEL` | Model used for the `opus` alias (hard tasks, escalation) | `deepseek-ai/DeepSeek-V4-Pro-0813` |
+| `ANTHROPIC_DEFAULT_SONNET_MODEL` | Model used for the `sonnet` alias (daily coding) | `deepseek-ai/DeepSeek-V4-Flash-0731` |
+| `ANTHROPIC_DEFAULT_HAIKU_MODEL` | Model used for the `haiku` alias and background tasks (tab completions, commit messages) | `inclusionAI/Ling-3.0-flash` |
+| `CLAUDE_CODE_SUBAGENT_MODEL` | Model used for subagents (parallel background tasks) | `inclusionAI/Ling-3.0-flash` |
+| `ANTHROPIC_CUSTOM_MODEL_OPTION` | Adds one extra entry to the `/model` picker | `zai-org/GLM-5.2` |
 
-A more complete example with all overrides:
-
-```bash
-deepinfra() {
-  export ANTHROPIC_BASE_URL=https://api.deepinfra.com/anthropic
-  export ANTHROPIC_AUTH_TOKEN=$DEEPINFRA_TOKEN
-  export ANTHROPIC_MODEL=deepseek-ai/DeepSeek-V3.1-Terminus
-  export ANTHROPIC_DEFAULT_OPUS_MODEL=deepseek-ai/DeepSeek-R1
-  export ANTHROPIC_DEFAULT_SONNET_MODEL=deepseek-ai/DeepSeek-V3.1-Terminus
-  export ANTHROPIC_DEFAULT_HAIKU_MODEL=Qwen/Qwen3-30B-A3B
-  export CLAUDE_CODE_SUBAGENT_MODEL=Qwen/Qwen3-30B-A3B
-  export CLAUDE_CODE_MAX_OUTPUT_TOKENS=16384
-  claude "$@"
-}
-```
+Each `*_MODEL` variable above has an optional `*_MODEL_NAME` companion (e.g. `ANTHROPIC_DEFAULT_OPUS_MODEL_NAME`) that sets the display label in the picker.
 
 <Note>
   `ANTHROPIC_DEFAULT_HAIKU_MODEL` is used for lightweight background tasks like tab completions and commit messages. Pick a fast, cheap model here to keep costs low. The older `ANTHROPIC_SMALL_FAST_MODEL` variable is deprecated — use `ANTHROPIC_DEFAULT_HAIKU_MODEL` instead.
@@ -158,7 +215,7 @@ Streaming works the same as the Anthropic API — use `stream=True` (Python) or 
 
 ```python
 with client.messages.stream(
-    model="deepseek-ai/DeepSeek-V3",
+    model="zai-org/GLM-5.2",
     max_tokens=1024,
     messages=[{"role": "user", "content": "Write a short poem about open source."}],
 ) as stream:
@@ -175,7 +232,7 @@ curl "https://api.deepinfra.com/anthropic/v1/messages/count_tokens" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $DEEPINFRA_TOKEN" \
   -d '{
-      "model": "deepseek-ai/DeepSeek-V3",
+      "model": "zai-org/GLM-5.2",
       "messages": [
         {
           "role": "user",
@@ -188,7 +245,7 @@ curl "https://api.deepinfra.com/anthropic/v1/messages/count_tokens" \
 ## Notes
 
 - You are running open-source models via the Anthropic protocol, not Anthropic's Claude models.
-- Model names use DeepInfra identifiers (e.g. `deepseek-ai/DeepSeek-V3`), not Anthropic model names.
+- Model names use DeepInfra identifiers (e.g. `zai-org/GLM-5.2`), not Anthropic model names.
 - Not all Anthropic-specific features may be supported. Standard message creation, streaming, and token counting work as expected.
 
 <CardGroup cols={2}>
