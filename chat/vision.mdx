@@ -11,9 +11,7 @@ DeepInfra hosts multimodal models that accept both images and text as input and 
 
 ## Available vision models
 
-- [Qwen/Qwen2.5-VL-32B-Instruct](https://deepinfra.com/Qwen/Qwen2.5-VL-32B-Instruct)
-- [Qwen/Qwen2.5-VL-7B-Instruct](https://deepinfra.com/Qwen/Qwen2.5-VL-7B-Instruct)
-- [meta-llama/Llama-3.2-11B-Vision-Instruct](https://deepinfra.com/meta-llama/Llama-3.2-11B-Vision-Instruct)
+Browse [all vision models](https://deepinfra.com/models/ocr).
 
 ## Available OCR models
 
@@ -34,7 +32,7 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
   -d '{
-    "model": "Qwen/Qwen2.5-VL-32B-Instruct",
+    "model": "Qwen/Qwen3-VL-235B-A22B-Instruct",
     "messages": [
       {
         "role": "user",
@@ -42,7 +40,7 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
           {
             "type": "image_url",
             "image_url": {
-              "url": "https://shared.deepinfra.com/models/llava-hf/llava-1.5-7b-hf/cover_image.ed4fba7a25b147e7fe6675e9f760585e11274e8ee72596e6412447260493cd4f-s600.webp"
+              "url": "https://shared.deepinfra.com/models/Qwen/Qwen3-VL-235B-A22B-Instruct/cover_image.188ae740a50d6f2f48bed81f834ffbe2fe5a0f38bd96dbd312ef804c18aad0c4.webp"
             }
           },
           {
@@ -67,11 +65,11 @@ openai = OpenAI(
     base_url="https://api.deepinfra.com/v1/openai",
 )
 
-image_url = "https://shared.deepinfra.com/models/llava-hf/llava-1.5-7b-hf/cover_image.ed4fba7a25b147e7fe6675e9f760585e11274e8ee72596e6412447260493cd4f-s600.webp"
+image_url = "https://shared.deepinfra.com/models/Qwen/Qwen3-VL-235B-A22B-Instruct/cover_image.188ae740a50d6f2f48bed81f834ffbe2fe5a0f38bd96dbd312ef804c18aad0c4.webp"
 base64_image = base64.b64encode(requests.get(image_url).content).decode("utf-8")
 
 chat_completion = openai.chat.completions.create(
-    model="Qwen/Qwen2.5-VL-32B-Instruct",
+    model="Qwen/Qwen3-VL-235B-A22B-Instruct",
     messages=[
         {
             "role": "user",
@@ -111,7 +109,7 @@ with open("invoice.png", "rb") as f:
     base64_image = base64.b64encode(f.read()).decode("utf-8")
 
 response = openai.chat.completions.create(
-    model="Qwen/Qwen2.5-VL-32B-Instruct",
+    model="Qwen/Qwen3-VL-235B-A22B-Instruct",
     messages=[
         {
             "role": "user",
@@ -147,7 +145,7 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
   -d '{
-    "model": "Qwen/Qwen2.5-VL-32B-Instruct",
+    "model": "Qwen/Qwen3-VL-235B-A22B-Instruct",
     "messages": [
       {
         "role": "user",

@@ -4,57 +4,52 @@ description: Generate images with Stable Diffusion and SDXL on DeepInfra.
 icon: image
 ---
 
-DeepInfra supports a wide variety of text-to-image models, including Stable Diffusion 1.4, 1.5, 2.1, SDXL, and many derivative models.
+DeepInfra supports a wide variety of text-to-image models. This page walks through SDXL Turbo; the catalog also carries the FLUX, Qwen-Image and Nano Banana families.
 
 Browse [all text-to-image models](https://deepinfra.com/models/text-to-image).
 
 ## Quick start
 
-This example uses `stability-ai/sdxl`:
+This example uses `stabilityai/sdxl-turbo`:
 
 <CodeGroup>
 
 ```javascript JavaScript
-import { Sdxl } from "deepinfra";
+import { TextToImage } from "deepinfra";
 import { createWriteStream } from "fs";
 import { Readable } from "stream";
 
 const DEEPINFRA_API_KEY = "$DEEPINFRA_TOKEN";
 
-const model = new Sdxl(DEEPINFRA_API_KEY);
+const model = new TextToImage("stabilityai/sdxl-turbo", DEEPINFRA_API_KEY);
 
 const response = await model.generate({
-  input: {
-    prompt: "a burger with a funny hat on the beach",
-  },
+  prompt: "a burger with a funny hat on the beach",
 });
 
-const result = await fetch(response.output[0]);
+const result = await fetch(response.images[0]);
 
 if (result.ok && result.body) {
-  Readable.fromWeb(result.body).pipe(createWriteStream("image.png"));
+  Readable.fromWeb(result.body).pipe(createWriteStream("image.jpg"));
 }
 ```
 
 ```bash cURL
-curl "https://api.deepinfra.com/v1/inference/stability-ai/sdxl" \
+curl "https://api.deepinfra.com/v1/inference/stabilityai/sdxl-turbo" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
-  -d '{
-        "input": {
-          "prompt": "a burger with a funny hat on the beach"
-        }
-      }'
+  -d '{"prompt": "a burger with a funny hat on the beach"}'
 ```
 
 </CodeGroup>
+
+`images[0]` is a `data:` URI containing the encoded image, not an HTTP link — `fetch()` accepts it directly, as above.
 
 ## Advanced options
 
 Each model has its own set of parameters including negative prompts, number of inference steps, guidance scale, seed, and more. Check the model's page for all available options:
 
-- [stability-ai/sdxl](https://deepinfra.com/stability-ai/sdxl)
-- [stabilityai/stable-diffusion-2-1](https://deepinfra.com/stabilityai/stable-diffusion-2-1)
+- [stabilityai/sdxl-turbo](https://deepinfra.com/stabilityai/sdxl-turbo)
 
 ## Using the OpenAI-compatible API
 

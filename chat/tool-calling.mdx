@@ -6,7 +6,7 @@ icon: wrench
 
 Tool calling (also known as function calling) is the most important capability for building AI agents. It lets models decide when to invoke external tools — web search, code execution, database queries, API calls — and seamlessly weave the results into a final response. Without reliable tool calling, agentic systems break down.
 
-**Tool call accuracy is a top priority for us.** We invest significant engineering effort in ensuring that function call parsing, argument extraction, and round-trip reliability are correct across all supported models. In third-party benchmarks like the [K2-Vendor-Verifier evaluation](https://github.com/MoonshotAI/K2-Vendor-Verifier?tab=readme-ov-file#k2-0905-evaluation-results), DeepInfra achieves a top accuracy score for `moonshotai/Kimi-K2-Instruct` — among the highest of any provider tested.
+**Tool call accuracy is a top priority for us.** We invest significant engineering effort in ensuring that function call parsing, argument extraction, and round-trip reliability are correct across all supported models. In Moonshot's [K2-Vendor-Verifier evaluation](https://github.com/MoonshotAI/K2-Vendor-Verifier?tab=readme-ov-file#k2-0905-evaluation-results) of Kimi K2, DeepInfra scored among the highest accuracy of any provider tested. The current Kimi model in our catalog is [`moonshotai/Kimi-K3`](https://deepinfra.com/moonshotai/Kimi-K3).
 
 We provide an OpenAI-compatible tool calling API. For more background, see the [DeepInfra blog](https://deepinfra.com/blog/function-calling-feature).
 
@@ -94,7 +94,7 @@ tools = [{
 messages = [{"role": "user", "content": "What is the weather in San Francisco?"}]
 
 response = client.chat.completions.create(
-    model="deepseek-ai/DeepSeek-V3",
+    model="deepseek-ai/DeepSeek-V4-Flash-0731",
     messages=messages,
     tools=tools,
     tool_choice="auto",
@@ -126,7 +126,7 @@ const tools = [{
 const messages = [{"role": "user", "content": "What is the weather in San Francisco?"}];
 
 const response = await client.chat.completions.create({
-  model: "deepseek-ai/DeepSeek-V3",
+  model: "deepseek-ai/DeepSeek-V4-Flash-0731",
   messages: messages,
   tools: tools,
   tool_choice: "auto",
@@ -170,7 +170,7 @@ for tool_call in tool_calls:
 
 # Get a new response from the model with function results
 second_response = client.chat.completions.create(
-    model="deepseek-ai/DeepSeek-V3",
+    model="deepseek-ai/DeepSeek-V4-Flash-0731",
     messages=messages,
     tools=tools,
     tool_choice="auto",
@@ -199,7 +199,7 @@ for (const tool_call of tool_calls) {
 }
 
 const second_response = await client.chat.completions.create({
-  model: "deepseek-ai/DeepSeek-V3",
+  model: "deepseek-ai/DeepSeek-V4-Flash-0731",
   messages: messages,
   tools: tools,
   tool_choice: "auto",

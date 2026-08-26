@@ -20,7 +20,7 @@ POST https://api.deepinfra.com/v1/inference/{model_name}
 import requests
 
 DEEPINFRA_TOKEN = "$DEEPINFRA_TOKEN"
-MODEL = "Wan-AI/Wan2.1-T2V-14B"
+MODEL = "Wan-AI/Wan2.2-T2V-A14B"
 
 response = requests.post(
     f"https://api.deepinfra.com/v1/inference/{MODEL}",
@@ -34,8 +34,13 @@ response = requests.post(
 )
 
 result = response.json()
-# result["video"] contains the URL to the generated video
-print(result["video"])
+
+# video_url is a `data:video/mp4;base64,...` URI, not an HTTP link.
+# Decode it to save the clip:
+import base64
+header, _, payload = result["video_url"].partition(",")
+with open("video.mp4", "wb") as f:
+    f.write(base64.b64decode(payload))
 ```
 
 ```bash cURL
@@ -43,10 +48,27 @@ curl -X POST \
   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"prompt": "A serene mountain lake at sunrise, with mist rising from the water and pine trees reflected on the surface."}' \
-  'https://api.deepinfra.com/v1/inference/Wan-AI/Wan2.1-T2V-14B'
+  'https://api.deepinfra.com/v1/inference/Wan-AI/Wan2.2-T2V-A14B'
 ```
 
 </CodeGroup>
+
+## Response
+
+```json
+{
+  "request_id": "RwKufnhcUDyHEYbVN2W1GWgr",
+  "inference_status": {
+    "runtime_ms": 267363,
+    "cost": 0.375,
+    "output_length": 5
+  },
+  "video_url": "data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28y...",
+  "seed": null
+}
+```
+
+`video_url` carries the whole clip inline as a `data:` URI — it is not an HTTP link, so decode the base64 payload to write the file. `output_length` is the clip duration in seconds, which is what these models are billed on.
 
 ## Tips for good prompts
 

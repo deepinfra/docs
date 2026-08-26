@@ -37,7 +37,7 @@ curl -X POST "https://api.deepinfra.com/v1/scoped-jwt" \
   -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -d '{
       "api_key_name": "auto",
-      "models": ["deepseek-ai/DeepSeek-R1"],
+      "models": ["deepseek-ai/DeepSeek-V4-Flash-0731"],
       "expires_delta": 3600,
       "spending_limit": 1.0
   }'
@@ -49,7 +49,7 @@ Response:
 {"token": "jwt:eyJhbGciOiJIUzI1NiIsImtpZCxxxxxxxxxxxxxxxxxx"}
 ```
 
-This creates a token limited to `deepseek-ai/DeepSeek-R1`, expiring in 1 hour, with a $1.00 spending limit.
+This creates a token limited to `deepseek-ai/DeepSeek-V4-Flash-0731`, expiring in 1 hour, with a $1.00 spending limit.
 
 **Optional fields** (omit to remove restriction):
 - `models` — allow any model
@@ -67,7 +67,7 @@ curl "https://api.deepinfra.com/v1/scoped-jwt?jwtoken=XXXX" \
 ```json
 {
   "expires_at": 1738843515,
-  "models": ["deepseek-ai/DeepSeek-R1"],
+  "models": ["deepseek-ai/DeepSeek-V4-Flash-0731"],
   "spending_limit": 1
 }
 ```
@@ -81,7 +81,7 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $SCOPED_JWT" \
   -d '{
-      "model": "deepseek-ai/DeepSeek-R1",
+      "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "messages": [{"role": "user", "content": "Hello!"}]
     }'
 ```
@@ -109,7 +109,7 @@ The `kid` field is `{user_id}:{base64(api_key_name)}` joined with colons. Only `
 ```json
 {
     "sub": "di:1000000000000",
-    "model": "deepseek-ai/DeepSeek-R1",
+    "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "exp": 1734616903
 }
 ```
