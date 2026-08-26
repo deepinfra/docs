@@ -36,7 +36,7 @@ messages = [
 ]
 
 response = client.chat.completions.create(
-    model="deepseek-ai/DeepSeek-V3",
+    model="deepseek-ai/DeepSeek-V4-Flash-0731",
     messages=messages,
     response_format={"type": "json_object"},
 )
@@ -49,7 +49,7 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
   -d '{
-      "model": "deepseek-ai/DeepSeek-V3",
+      "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "messages": [
         {
           "role": "user",
@@ -78,7 +78,7 @@ client = openai.OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="deepseek-ai/DeepSeek-V3",
+    model="deepseek-ai/DeepSeek-V4-Flash-0731",
     messages=[
         {
             "role": "user",
@@ -112,7 +112,7 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
   -d '{
-      "model": "deepseek-ai/DeepSeek-V3",
+      "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "messages": [
         {
           "role": "user",

@@ -32,7 +32,7 @@ SYSTEM_PROMPT = """You are a helpful AI assistant with deep expertise in Python.
 
 # First request — full processing
 response1 = client.chat.completions.create(
-    model="deepseek-ai/DeepSeek-V3",
+    model="deepseek-ai/DeepSeek-V4-Flash-0731",
     messages=[
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": "How do I use list comprehensions?"},
@@ -41,7 +41,7 @@ response1 = client.chat.completions.create(
 
 # Second request — cached prefix reused, faster and cheaper
 response2 = client.chat.completions.create(
-    model="deepseek-ai/DeepSeek-V3",
+    model="deepseek-ai/DeepSeek-V4-Flash-0731",
     messages=[
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": "What are Python generators?"},
@@ -103,7 +103,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="deepseek-ai/DeepSeek-V3",
+    model="deepseek-ai/DeepSeek-V4-Flash-0731",
     messages=[
         {"role": "system", "content": "You are a helpful coding assistant."},
         {"role": "user", "content": "How do I use async/await?"},
@@ -121,7 +121,7 @@ const openai = new OpenAI({
 });
 
 const response = await openai.chat.completions.create({
-  model: "deepseek-ai/DeepSeek-V3",
+  model: "deepseek-ai/DeepSeek-V4-Flash-0731",
   messages: [
     { role: "system", content: "You are a helpful coding assistant." },
     { role: "user", content: "How do I use async/await?" },
@@ -135,7 +135,7 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
   -d '{
-      "model": "deepseek-ai/DeepSeek-V3",
+      "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "prompt_cache_key": "user123-chat456",
       "messages": [
         {

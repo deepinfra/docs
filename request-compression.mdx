@@ -19,7 +19,7 @@ is returned.
 ```bash cURL
 # Pipe the JSON body through gzip and send it with Content-Encoding: gzip
 echo '{
-  "model": "deepseek-ai/DeepSeek-V3",
+  "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
   "messages": [{"role": "user", "content": "Hello!"}]
 }' | gzip | curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
@@ -34,7 +34,7 @@ import json
 import requests
 
 payload = json.dumps({
-    "model": "deepseek-ai/DeepSeek-V3",
+    "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "messages": [{"role": "user", "content": "Hello!"}],
 }).encode("utf-8")
 
@@ -54,7 +54,7 @@ print(response.json())
 import { gzipSync } from "node:zlib";
 
 const payload = JSON.stringify({
-  model: "deepseek-ai/DeepSeek-V3",
+  model: "deepseek-ai/DeepSeek-V4-Flash-0731",
   messages: [{ role: "user", content: "Hello!" }],
 });
 

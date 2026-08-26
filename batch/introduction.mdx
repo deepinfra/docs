@@ -49,8 +49,8 @@ The input is a [JSONL](https://jsonlines.org/) file with one request per line. E
 <CodeGroup>
 
 ```jsonl Chat completions
-{"custom_id": "req-1", "method": "POST", "url": "/v1/chat/completions", "body": {"model": "deepseek-ai/DeepSeek-V3", "messages": [{"role": "user", "content": "Hello!"}], "max_tokens": 100}}
-{"custom_id": "req-2", "method": "POST", "url": "/v1/chat/completions", "body": {"model": "deepseek-ai/DeepSeek-V3", "messages": [{"role": "user", "content": "Write a haiku about batching."}], "max_tokens": 100}}
+{"custom_id": "req-1", "method": "POST", "url": "/v1/chat/completions", "body": {"model": "deepseek-ai/DeepSeek-V4-Flash-0731", "messages": [{"role": "user", "content": "Hello!"}], "max_tokens": 100}}
+{"custom_id": "req-2", "method": "POST", "url": "/v1/chat/completions", "body": {"model": "deepseek-ai/DeepSeek-V4-Flash-0731", "messages": [{"role": "user", "content": "Write a haiku about batching."}], "max_tokens": 100}}
 ```
 
 ```jsonl Embeddings
@@ -66,7 +66,7 @@ A few rules:
 - **`method` must be `POST`.**
 - **`url` must equal the batch's `endpoint`** — you can't mix endpoints in one file.
 - **All requests must use the same model.**
-- Use a DeepInfra model id (e.g. `deepseek-ai/DeepSeek-V3`), not an OpenAI model name.
+- Use a DeepInfra model id (e.g. `deepseek-ai/DeepSeek-V4-Flash-0731`), not an OpenAI model name.
 - **`body` must match the request format of the corresponding endpoint** — it's the exact JSON you'd send to that endpoint in real time. See [Chat Completions](/chat/overview), [Text Completions](/apis/completions), or [Embeddings](/apis/embeddings).
 
 ## Step 2 — Upload the file

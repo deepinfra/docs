@@ -10,7 +10,11 @@ Some models on DeepInfra support extended chain-of-thought reasoning — the mod
 
 Reasoning is available on models that support chain-of-thought, including:
 
-- `deepseek-ai/DeepSeek-R1`
+- `deepseek-ai/DeepSeek-V4-Flash-0731`
+- `deepseek-ai/DeepSeek-V4-Pro-0813`
+- `zai-org/GLM-5.2`
+- `moonshotai/Kimi-K3`
+- `inclusionAI/Ling-3.0-flash`
 
 Check the [model catalog](https://deepinfra.com/models) for the latest list.
 
@@ -29,7 +33,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="deepseek-ai/DeepSeek-R1",
+    model="deepseek-ai/DeepSeek-V4-Flash-0731",
     messages=[{"role": "user", "content": "Prove that the square root of 2 is irrational."}],
     extra_body={"reasoning_effort": "high"},
 )
@@ -46,7 +50,7 @@ const openai = new OpenAI({
 });
 
 const response = await openai.chat.completions.create({
-  model: "deepseek-ai/DeepSeek-R1",
+  model: "deepseek-ai/DeepSeek-V4-Flash-0731",
   messages: [{ role: "user", content: "Prove that the square root of 2 is irrational." }],
   reasoning_effort: "high",
 });
@@ -59,7 +63,7 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
   -d '{
-      "model": "deepseek-ai/DeepSeek-R1",
+      "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "reasoning_effort": "high",
       "messages": [
         {
@@ -80,7 +84,7 @@ Set `reasoning_effort` to `"none"` to disable chain-of-thought entirely. The mod
 
 ```python Python
 response = client.chat.completions.create(
-    model="deepseek-ai/DeepSeek-R1",
+    model="deepseek-ai/DeepSeek-V4-Flash-0731",
     messages=[{"role": "user", "content": "What is the capital of France?"}],
     extra_body={"reasoning_effort": "none"},
 )
@@ -88,7 +92,7 @@ response = client.chat.completions.create(
 
 ```javascript JavaScript
 const response = await openai.chat.completions.create({
-  model: "deepseek-ai/DeepSeek-R1",
+  model: "deepseek-ai/DeepSeek-V4-Flash-0731",
   messages: [{ role: "user", content: "What is the capital of France?" }],
   reasoning_effort: "none",
 });
@@ -99,7 +103,7 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
   -d '{
-      "model": "deepseek-ai/DeepSeek-R1",
+      "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "reasoning_effort": "none",
       "messages": [
         {
@@ -120,7 +124,7 @@ For more granular control, use the `reasoning` object instead of `reasoning_effo
 
 ```python Python
 response = client.chat.completions.create(
-    model="deepseek-ai/DeepSeek-R1",
+    model="deepseek-ai/DeepSeek-V4-Flash-0731",
     messages=[{"role": "user", "content": "Solve this step by step: 15! / 13!"}],
     extra_body={
         "reasoning": {
@@ -133,7 +137,7 @@ response = client.chat.completions.create(
 
 ```javascript JavaScript
 const response = await openai.chat.completions.create({
-  model: "deepseek-ai/DeepSeek-R1",
+  model: "deepseek-ai/DeepSeek-V4-Flash-0731",
   messages: [{ role: "user", content: "Solve this step by step: 15! / 13!" }],
   reasoning: {
     effort: "medium",
@@ -147,7 +151,7 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
   -d '{
-      "model": "deepseek-ai/DeepSeek-R1",
+      "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "reasoning": {
         "effort": "medium",
         "enabled": true

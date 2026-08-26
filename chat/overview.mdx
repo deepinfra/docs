@@ -42,7 +42,7 @@ openai = OpenAI(
 )
 
 chat_completion = openai.chat.completions.create(
-    model="deepseek-ai/DeepSeek-V3",
+    model="deepseek-ai/DeepSeek-V4-Flash-0731",
     messages=[{"role": "user", "content": "Hello"}],
 )
 
@@ -60,7 +60,7 @@ const openai = new OpenAI({
 
 const completion = await openai.chat.completions.create({
   messages: [{ role: "user", content: "Hello" }],
-  model: "deepseek-ai/DeepSeek-V3",
+  model: "deepseek-ai/DeepSeek-V4-Flash-0731",
 });
 
 console.log(completion.choices[0].message.content);
@@ -72,7 +72,7 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
   -d '{
-      "model": "deepseek-ai/DeepSeek-V3",
+      "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "messages": [
         {
           "role": "user",
@@ -99,7 +99,7 @@ openai = OpenAI(
 )
 
 chat_completion = openai.chat.completions.create(
-    model="deepseek-ai/DeepSeek-V3",
+    model="deepseek-ai/DeepSeek-V4-Flash-0731",
     messages=[
         {"role": "system", "content": "Respond like a michelin starred chef."},
         {"role": "user", "content": "Can you name at least two different techniques to cook lamb?"},
@@ -126,7 +126,7 @@ const completion = await openai.chat.completions.create({
     {role: "assistant", content: "Bonjour! Let me tell you, my friend, cooking lamb is an art form..."},
     {role: "user", content: "Tell me more about the second method."}
   ],
-  model: "deepseek-ai/DeepSeek-V3",
+  model: "deepseek-ai/DeepSeek-V4-Flash-0731",
 });
 
 console.log(completion.choices[0].message.content);
@@ -137,7 +137,7 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
   -d '{
-      "model": "deepseek-ai/DeepSeek-V3",
+      "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "messages": [
         {"role": "system", "content": "Respond like a michelin starred chef."},
         {"role": "user", "content": "Can you name at least two different techniques to cook lamb?"},
@@ -193,7 +193,7 @@ Set `service_tier` to `"priority"` to request priority inference on supported mo
 
 ```python Python
 response = client.chat.completions.create(
-    model="deepseek-ai/DeepSeek-V3",
+    model="deepseek-ai/DeepSeek-V4-Flash-0731",
     messages=[{"role": "user", "content": "Hello!"}],
     extra_body={"service_tier": "priority"},
 )
@@ -201,7 +201,7 @@ response = client.chat.completions.create(
 
 ```javascript JavaScript
 const response = await openai.chat.completions.create({
-  model: "deepseek-ai/DeepSeek-V3",
+  model: "deepseek-ai/DeepSeek-V4-Flash-0731",
   messages: [{ role: "user", content: "Hello!" }],
   service_tier: "priority",
 });
@@ -212,7 +212,7 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
   -d '{
-      "model": "deepseek-ai/DeepSeek-V3",
+      "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "service_tier": "priority",
       "messages": [
         {
@@ -237,7 +237,7 @@ Set `service_tier` to `"flex"` to run Chat Completions requests at a lower cost 
 
 ```python Python
 response = client.chat.completions.create(
-    model="deepseek-ai/DeepSeek-V3",
+    model="deepseek-ai/DeepSeek-V4-Flash-0731",
     messages=[{"role": "user", "content": "Hello!"}],
     extra_body={"service_tier": "flex"},
 )
@@ -245,7 +245,7 @@ response = client.chat.completions.create(
 
 ```javascript JavaScript
 const response = await openai.chat.completions.create({
-  model: "deepseek-ai/DeepSeek-V3",
+  model: "deepseek-ai/DeepSeek-V4-Flash-0731",
   messages: [{ role: "user", content: "Hello!" }],
   service_tier: "flex",
 });
@@ -256,7 +256,7 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
   -d '{
-      "model": "deepseek-ai/DeepSeek-V3",
+      "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "service_tier": "flex",
       "messages": [
         {
@@ -281,7 +281,7 @@ This is meant for latency-sensitive callers that would rather go somewhere else 
 
 ```python Python
 response = client.chat.completions.create(
-    model="deepseek-ai/DeepSeek-V3",
+    model="deepseek-ai/DeepSeek-V4-Flash-0731",
     messages=[{"role": "user", "content": "Hello!"}],
     extra_body={"fail_fast": True},
 )
@@ -289,7 +289,7 @@ response = client.chat.completions.create(
 
 ```javascript JavaScript
 const response = await openai.chat.completions.create({
-  model: "deepseek-ai/DeepSeek-V3",
+  model: "deepseek-ai/DeepSeek-V4-Flash-0731",
   messages: [{ role: "user", content: "Hello!" }],
   fail_fast: true,
 });
@@ -300,7 +300,7 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
   -d '{
-      "model": "deepseek-ai/DeepSeek-V3",
+      "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "fail_fast": true,
       "messages": [
         {
@@ -347,7 +347,7 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
     -d '{
-        "model": "deepseek-ai/DeepSeek-V3",
+        "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
         "messages": [
             {"role": "user", "content": "Write a very long essay about AI."},
             {"role": "assistant", "content": "<previous truncated response>"}
