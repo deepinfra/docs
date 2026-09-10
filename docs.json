@@ -121,6 +121,7 @@
               "integrations/llama-index",
               "integrations/ai-sdk",
               "integrations/autogen",
+              "integrations/microsoft-agent-framework",
               "integrations/pi",
               "integrations/hermes-agent"
             ]
