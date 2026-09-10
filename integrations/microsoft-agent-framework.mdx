@@ -1,0 +1,173 @@
+---
+title: Microsoft Agent Framework
+description: Run Microsoft Agent Framework agents on DeepInfra models in Python and .NET through the OpenAI-compatible API.
+icon: microsoft
+---
+
+[Microsoft Agent Framework](https://learn.microsoft.com/agent-framework/) is Microsoft's open-source SDK for building AI agents and multi-agent workflows in Python and .NET. Its OpenAI clients work with any OpenAI-compatible endpoint, so you can point them at DeepInfra and use any [LLM from our catalog](https://deepinfra.com/models/text-generation). There is no DeepInfra-specific package; you use the standard OpenAI Chat Completions client with a custom base URL.
+
+## Installation
+
+<CodeGroup>
+
+```bash Python
+pip install agent-framework-openai
+```
+
+```bash .NET
+dotnet add package Microsoft.Agents.AI.OpenAI
+```
+
+</CodeGroup>
+
+Get your API key from the [Dashboard](https://deepinfra.com/dash/api_keys) and export it as `DEEPINFRA_TOKEN`.
+
+## Configuration
+
+Create the Chat Completions client with DeepInfra's base URL and your API key, then build an agent from it. Everything else works as described in the [Agent Framework docs](https://learn.microsoft.com/agent-framework/user-guide/overview).
+
+<CodeGroup>
+
+```python Python
+import asyncio
+import os
+
+from agent_framework import Agent
+from agent_framework.openai import OpenAIChatCompletionClient
+
+
+async def main() -> None:
+    client = OpenAIChatCompletionClient(
+        model="deepseek-ai/DeepSeek-V4-Flash-0731",
+        api_key=os.environ["DEEPINFRA_TOKEN"],
+        base_url="https://api.deepinfra.com/v1/openai",
+    )
+    agent = Agent(client=client, instructions="You are a concise, helpful assistant.")
+
+    result = await agent.run("Explain what a GPU inference provider does in two sentences.")
+    print(result.text)
+
+    async for chunk in agent.run("Write a haiku about fast inference.", stream=True):
+        if chunk.text:
+            print(chunk.text, end="", flush=True)
+    print()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+```csharp .NET
+using System.ClientModel;
+using Microsoft.Agents.AI;
+using OpenAI;
+
+var apiKey = Environment.GetEnvironmentVariable("DEEPINFRA_TOKEN")
+    ?? throw new InvalidOperationException("DEEPINFRA_TOKEN is not set.");
+
+AIAgent agent = new OpenAIClient(
+        new ApiKeyCredential(apiKey),
+        new OpenAIClientOptions { Endpoint = new Uri("https://api.deepinfra.com/v1/openai") })
+    .GetChatClient("deepseek-ai/DeepSeek-V4-Flash-0731")
+    .AsAIAgent(instructions: "You are a concise, helpful assistant.");
+
+Console.WriteLine(await agent.RunAsync("Explain what a GPU inference provider does in two sentences."));
+
+await foreach (AgentResponseUpdate update in agent.RunStreamingAsync("Write a haiku about fast inference."))
+{
+    Console.Write(update);
+}
+Console.WriteLine();
+```
+
+</CodeGroup>
+
+<Warning>
+  Use the Chat Completions client only: `OpenAIChatCompletionClient` in Python, `GetChatClient()` in .NET. `OpenAIChatClient` (Python) and `GetResponsesClient()` (.NET) target the OpenAI Responses API, which DeepInfra does not serve.
+</Warning>
+
+Function tools, sessions, and structured output need no DeepInfra-specific setup. `response_format` with `json_schema` and `strict: true` is supported on [many models](https://deepinfra.com/models?q=json); see [Structured Outputs](/chat/structured-outputs).
+
+### Environment variables
+
+The Python clients fall back to `OPENAI_API_KEY`, `OPENAI_BASE_URL`, and `OPENAI_CHAT_COMPLETION_MODEL` when constructor arguments are omitted, so you can also configure them that way:
+
+```bash
+export OPENAI_API_KEY="<your DeepInfra API key>"
+export OPENAI_BASE_URL="https://api.deepinfra.com/v1/openai"
+export OPENAI_CHAT_COMPLETION_MODEL="deepseek-ai/DeepSeek-V4-Flash-0731"
+```
+
+<Note>
+  If a real OpenAI key is already set in `OPENAI_API_KEY`, the client will send it to DeepInfra. Passing `api_key` and `base_url` explicitly, as above, avoids that.
+</Note>
+
+## Embeddings
+
+`OpenAIEmbeddingClient` takes the same arguments. Use any [embedding model](https://deepinfra.com/models/embeddings) from the catalog.
+
+```python
+from agent_framework.openai import OpenAIEmbeddingClient
+
+client = OpenAIEmbeddingClient(
+    model="Qwen/Qwen3-Embedding-8B",
+    api_key=os.environ["DEEPINFRA_TOKEN"],
+    base_url="https://api.deepinfra.com/v1/openai",
+)
+result = await client.get_embeddings(["DeepInfra serves open models.", "Agents call tools."])
+for embedding in result:
+    print(embedding.dimensions, embedding.vector[:5])
+```
+
+## Reasoning models
+
+DeepInfra returns the chain-of-thought of [reasoning models](/chat/reasoning) in a `reasoning_content` field, in both the final message and each streaming delta. Agent Framework does not read that field natively, but its `response_parser` hook lets you surface it as `text_reasoning` content. Set `reasoning_effort` through `options`; any key there is forwarded to the OpenAI SDK, and DeepInfra-only parameters can go in `options={"extra_body": {...}}`.
+
+```python
+from typing import Any
+
+from agent_framework import Agent, Content
+from agent_framework.openai import OpenAIChatCompletionClient
+
+
+def deepinfra_reasoning_parser(message: Any, contents: list[Content]) -> list[Content]:
+    reasoning = getattr(message, "reasoning_content", None)
+    if isinstance(reasoning, str) and reasoning:
+        return [Content.from_text_reasoning(text=reasoning), *contents]
+    return contents
+
+
+agent = Agent(
+    client=OpenAIChatCompletionClient(
+        model="deepseek-ai/DeepSeek-V4-Flash-0731",
+        api_key=os.environ["DEEPINFRA_TOKEN"],
+        base_url="https://api.deepinfra.com/v1/openai",
+        response_parser=deepinfra_reasoning_parser,
+    ),
+    instructions="You are a helpful assistant.",
+)
+
+result = await agent.run("What is 17 * 23?", options={"reasoning_effort": "high"})
+for message in result.messages:
+    for content in message.contents:
+        if content.type == "text_reasoning":
+            print("[reasoning]", content.text)
+print("[answer]", result.text)
+```
+
+DeepInfra does not require reasoning to be echoed back on later turns, so no `message_preparer` is needed; sessions and tool-call loops work with this parser as-is.
+
+## Learn more
+
+<CardGroup cols={2}>
+  <Card title="Agent Framework docs" icon="book" href="https://learn.microsoft.com/agent-framework/user-guide/overview">
+    Agents, tools, sessions, structured output, workflows, and observability.
+  </Card>
+  <Card title="OpenAI-compatible endpoints" icon="code" href="https://github.com/microsoft/agent-framework/blob/main/python/packages/openai/AGENTS.md">
+    Agent Framework's guidance on adapting its OpenAI client to other providers.
+  </Card>
+</CardGroup>
+
+<Note>
+  Agent Framework is under active development and API names change between releases; see the [Python changelog](https://github.com/microsoft/agent-framework/blob/main/python/CHANGELOG.md). Tested with `agent-framework-openai` 1.14.2, `openai` 3.11.0, and `Microsoft.Agents.AI.OpenAI` 1.20.0.
+</Note>
