@@ -59,7 +59,12 @@ pi --model deepinfra/deepseek-ai/DeepSeek-V4-Flash
 - The **`cost`** block only drives Pi's local spend display; the numbers above are DeepInfra's current per-million-token rates for this model, but they don't affect requests either way.
 
 <Note>
-  To get the current context window and pricing for this or any other model, fetch [`/v1/openai/models?filter=with_meta`](https://api.deepinfra.com/v1/openai/models?filter=with_meta&sort_by=openclaw), or see the [model's page](https://deepinfra.com/deepseek-ai/DeepSeek-V4-Flash).
+  To get the current context window and pricing for this or any other model, fetch [`/v1/openai/models?filter=with_meta&sort_by=pi`](https://api.deepinfra.com/v1/openai/models?filter=with_meta&sort_by=pi), or see the [model's page](https://deepinfra.com/deepseek-ai/DeepSeek-V4-Flash). Each entry's `metadata` block maps onto the config above: `context_length` → `contextWindow`, `pricing.input_tokens` / `output_tokens` / `cache_read_tokens` → `cost`.
+
+  ```bash
+  curl -s "https://api.deepinfra.com/v1/openai/models?filter=with_meta&sort_by=pi" \
+    | jq '.data[] | select(.id == "deepseek-ai/DeepSeek-V4-Flash").metadata | {context_length, pricing}'
+  ```
 </Note>
 
 ## Troubleshooting

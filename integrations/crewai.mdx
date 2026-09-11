@@ -1,0 +1,269 @@
+---
+title: CrewAI
+description: Run CrewAI agents on DeepInfra models through the OpenAI-compatible API, embed knowledge with DeepInfra embedding models, and execute agent code in DeepInfra Sandboxes.
+icon: people-group
+---
+
+[CrewAI](https://docs.crewai.com/) is a Python framework for building crews of role-playing agents that collaborate on tasks. Its `LLM` class ships a native OpenAI client that accepts a custom base URL, so it talks to DeepInfra directly with no LiteLLM dependency. Tool calling, streaming, JSON-schema structured outputs and token usage reporting all work over this path, with any [chat model from our catalog](https://deepinfra.com/models/text-generation).
+
+## Installation
+
+```bash
+pip install crewai
+```
+
+Get your API key from the [Dashboard](https://deepinfra.com/dash/api_keys) and export it as `DEEPINFRA_API_KEY`. It is the same key you use for inference, embeddings and Sandboxes.
+
+```bash
+export DEEPINFRA_API_KEY="<your DeepInfra API key here>"
+```
+
+## Configuration
+
+Create the LLM with `custom_openai=True` and DeepInfra's base URL. The model id is passed through unchanged, so use the exact `org/model` id from the catalog.
+
+```python
+import os
+
+from crewai import LLM
+
+llm = LLM(
+    model="Qwen/Qwen3.5-27B",
+    custom_openai=True,
+    base_url="https://api.deepinfra.com/v1/openai",
+    api_key=os.environ["DEEPINFRA_API_KEY"],
+    temperature=0.2,
+)
+```
+
+`custom_openai=True` selects CrewAI's native OpenAI client and skips the check against OpenAI's own model list, which is what lets a DeepInfra model id through. `base_url` is required when you set it. Pass the `llm` object to every `Agent` that should run on DeepInfra; different agents in one crew can use different models.
+
+<Note>
+  Agents defined in `agents.yaml` take `llm` as a plain string, which cannot carry a base URL. In a `@CrewBase` class, build the `LLM` in a method decorated with `@llm` and reference the method name from YAML; CrewAI resolves the name to the object when it loads the agent.
+
+  ```python
+  from crewai.project import CrewBase, agent, crew, llm, task
+
+
+  @CrewBase
+  class ResearchCrew:
+      @llm
+      def deepinfra_llm(self) -> LLM:
+          return LLM(
+              model="Qwen/Qwen3.5-27B",
+              custom_openai=True,
+              base_url="https://api.deepinfra.com/v1/openai",
+              api_key=os.environ["DEEPINFRA_API_KEY"],
+          )
+  ```
+
+  ```yaml
+  researcher:
+    role: Researcher
+    llm: deepinfra_llm
+  ```
+</Note>
+
+## Build a crew
+
+The example below gives an agent a tool and runs a single task. The agent calls the tool through OpenAI-style function calling, receives the result, and writes the answer.
+
+```python
+import os
+
+from crewai import Agent, Crew, LLM, Task
+from crewai.tools import tool
+
+llm = LLM(
+    model="Qwen/Qwen3.5-27B",
+    custom_openai=True,
+    base_url="https://api.deepinfra.com/v1/openai",
+    api_key=os.environ["DEEPINFRA_API_KEY"],
+    temperature=0.2,
+)
+
+
+@tool("Exchange rate")
+def exchange_rate(pair: str) -> str:
+    """Return the current exchange rate for a currency pair such as 'EUR/USD'."""
+    rates = {"EUR/USD": 1.0842, "GBP/USD": 1.2650, "USD/JPY": 156.30}
+    return f"{pair}: {rates.get(pair.upper(), 'unknown pair')}"
+
+
+analyst = Agent(
+    role="FX analyst",
+    goal="Answer currency questions with numbers from the exchange rate tool",
+    backstory="You never guess a rate; you always call the tool first.",
+    llm=llm,
+    tools=[exchange_rate],
+)
+
+task = Task(
+    description="How many US dollars is 250 euros? Use the tool for the rate and show the arithmetic.",
+    expected_output="One sentence with the rate used and the converted amount.",
+    agent=analyst,
+)
+
+result = Crew(agents=[analyst], tasks=[task]).kickoff()
+print(result.raw)
+print(result.token_usage)
+```
+
+Example output:
+
+```text
+Using the current exchange rate of 1.0842 EUR/USD, 250 euros is equal to 271.05 US dollars.
+total_tokens=1419 prompt_tokens=821 cached_prompt_tokens=0 completion_tokens=598 reasoning_tokens=0 cache_creation_tokens=0 successful_requests=2
+```
+
+Token counts come from DeepInfra's `usage` object on each response, so `result.token_usage` matches what you are billed for.
+
+## Knowledge and memory with DeepInfra embeddings
+
+CrewAI's knowledge sources and memory store text as embeddings. Its `openai` embedder accepts an `api_base`, so point it at DeepInfra and pick an [embedding model](https://deepinfra.com/models/embeddings). The same `embedder` dictionary works on `Crew(embedder=...)`, on `Agent(embedder=...)` and in memory configuration.
+
+```python
+import os
+
+from crewai import Agent, Crew, LLM, Task
+from crewai.knowledge.source.string_knowledge_source import StringKnowledgeSource
+
+llm = LLM(
+    model="Qwen/Qwen3.5-27B",
+    custom_openai=True,
+    base_url="https://api.deepinfra.com/v1/openai",
+    api_key=os.environ["DEEPINFRA_API_KEY"],
+)
+
+facts = StringKnowledgeSource(
+    content=(
+        "Orbital Coffee opened in 2019 in Sofia. Its house blend is called Perihelion. "
+        "The roastery runs on a 15 kg Loring roaster and ships wholesale on Tuesdays."
+    )
+)
+
+embedder = {
+    "provider": "openai",
+    "config": {
+        "api_key": os.environ["DEEPINFRA_API_KEY"],
+        "api_base": "https://api.deepinfra.com/v1/openai",
+        "model_name": "BAAI/bge-m3",
+    },
+}
+
+agent = Agent(
+    role="Support agent",
+    goal="Answer questions about Orbital Coffee from the knowledge base",
+    backstory="You answer only from what the knowledge base says.",
+    llm=llm,
+)
+
+task = Task(
+    description="What is Orbital Coffee's house blend called, and on which day does wholesale ship?",
+    expected_output="A one-sentence answer.",
+    agent=agent,
+)
+
+crew = Crew(agents=[agent], tasks=[task], knowledge_sources=[facts], embedder=embedder)
+print(crew.kickoff().raw)
+```
+
+Example output:
+
+```text
+Orbital Coffee's house blend is called Perihelion and wholesale ships on Tuesdays.
+```
+
+| Embedding model | Dimensions | Max input | Notes |
+| --- | --- | --- | --- |
+| `BAAI/bge-m3` | 1024 | 8,192 tokens | Multilingual, a solid default for knowledge bases |
+| `Qwen/Qwen3-Embedding-4B` | 2560 | 32,768 tokens | Higher quality, larger vectors |
+| `Qwen/Qwen3-Embedding-8B` | 4096 | 32,768 tokens | Highest quality in the catalog |
+| `intfloat/multilingual-e5-large` | 1024 | 512 tokens | Small and fast for short passages |
+
+Keep the same embedding model for the life of a knowledge base or memory store; vectors from different models are not comparable.
+
+## Run agent code in a Sandbox
+
+Agents that write code need somewhere safe to run it. [DeepInfra Sandboxes](/sandboxes/overview) are isolated microVMs created with one API call, and the `deepinfra` Python SDK wraps them. The tool below runs Python in a fresh sandbox per call and returns the output to the agent.
+
+```bash
+pip install deepinfra
+```
+
+```python
+from crewai.tools import BaseTool
+from deepinfra import Sandbox
+from pydantic import BaseModel, Field
+
+
+class RunPythonInput(BaseModel):
+    code: str = Field(..., description="Python source to execute.")
+
+
+class DeepInfraSandboxPython(BaseTool):
+    name: str = "Run Python in a DeepInfra sandbox"
+    description: str = (
+        "Executes Python code in an isolated DeepInfra Sandbox and returns "
+        "stdout, stderr and the exit code."
+    )
+    args_schema: type[BaseModel] = RunPythonInput
+    plan: str = "nano"
+
+    def _run(self, code: str) -> str:
+        with Sandbox.create(plan=self.plan, timeout="10m", tags={"framework": "crewai"}) as sb:
+            result = sb.run_python(code)
+        return f"exit={result.returncode}\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+```
+
+Add `DeepInfraSandboxPython()` to an agent's `tools` list like any other tool. A nano sandbox is running within about half a second of the create call, and the context manager terminates it when the call returns, so you pay only for the seconds the code runs. Files the agent needs to keep between calls belong in `/workspace`; to carry state across calls, create one `Sandbox` in the tool's constructor and reuse it instead of the context manager. Note the account limit of five active sandboxes when many agents run in parallel.
+
+## Choosing a model
+
+The agent loop depends on reliable tool calling. The models below are verified with CrewAI's function-calling path on DeepInfra; context lengths are from the [model catalog](https://api.deepinfra.com/v1/openai/models?filter=with_meta&sort_by=crewai), which is public and also carries current pricing.
+
+| Model | Context | Good for |
+| --- | --- | --- |
+| `Qwen/Qwen3.5-27B` | 262K | Fast, inexpensive default with vision and reasoning |
+| `deepseek-ai/DeepSeek-V4-Flash` | 1M | Long documents at very low cost |
+| `zai-org/GLM-5.3` | 1M | Strong reasoning on complex multi-step tasks |
+| `meta-llama/Llama-4-Scout-17B-16E-Instruct` | 327K | Llama ecosystem, vision, wide language coverage |
+| `moonshotai/Kimi-K2.7-Code` | 262K | Coding agents |
+| `google/gemma-4-31B-it-turbo` | 262K | Cheap, capable generalist |
+
+<Note>
+  To compare other models, list the catalog with context windows and pricing via [`/v1/openai/models?filter=with_meta&sort_by=crewai`](https://api.deepinfra.com/v1/openai/models?filter=with_meta&sort_by=crewai). Each entry's `metadata` block has `context_length`, `max_tokens`, and per-million-token `pricing`; the `id` is what you pass as `model`.
+
+  ```bash
+  curl -s "https://api.deepinfra.com/v1/openai/models?filter=with_meta&sort_by=crewai" \
+    | jq '.data[] | select(.metadata.tags | index("chat")) | {id, context_length: .metadata.context_length, pricing: .metadata.pricing}'
+  ```
+</Note>
+
+## Tips
+
+- **Context window.** CrewAI looks model ids up in a table of OpenAI models to size its context management, and assumes 8,192 tokens for ids it does not know. With the default `respect_context_window=True`, an agent on a DeepInfra model starts summarising its conversation at roughly 7,000 tokens even when the model supports far more. Set `respect_context_window=False` on agents that need the full window; CrewAI then sends the full history and surfaces the provider error if a prompt ever exceeds the model's real limit.
+- **The `deepinfra/` prefix.** `LLM(model="deepinfra/Qwen/Qwen3.5-27B")` routes through LiteLLM, which reads `DEEPINFRA_API_KEY` from the environment. It needs `pip install "crewai[litellm]"`; without LiteLLM installed, constructing the `LLM` raises an `ImportError`. The `custom_openai=True` form above uses CrewAI's native client and has no extra dependency.
+- **Structured outputs.** Pass a Pydantic model as `response_format` on the `LLM` or as `output_pydantic` on a `Task`. CrewAI sends it as a strict JSON schema, which DeepInfra honours.
+- **Streaming.** Set `stream=True` on the `LLM` to receive tokens as they are generated. Usage is still reported on the final chunk.
+
+## Learn more
+
+<CardGroup cols={2}>
+  <Card title="CrewAI LLM docs" icon="book" href="https://docs.crewai.com/en/concepts/llms">
+    Every `LLM` parameter, provider routing, and the YAML configuration format.
+  </Card>
+  <Card title="Chat Completions" icon="comments" href="/chat/overview">
+    DeepInfra's OpenAI-compatible endpoint, including [Tool Calling](/chat/tool-calling) and [Structured Outputs](/chat/structured-outputs).
+  </Card>
+  <Card title="Embeddings" icon="vector-square" href="/apis/embeddings">
+    Embedding models for knowledge bases and memory.
+  </Card>
+  <Card title="Sandboxes" icon="box" href="/sandboxes/overview">
+    Isolated microVMs for running agent-written code.
+  </Card>
+</CardGroup>
+
+<Note>
+  Tested with `crewai` 1.15.21 and `deepinfra` 0.3.0.
+</Note>
