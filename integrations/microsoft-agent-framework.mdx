@@ -88,6 +88,15 @@ Console.WriteLine();
 
 Function tools, sessions, and structured output need no DeepInfra-specific setup. `response_format` with `json_schema` and `strict: true` is supported on [many models](https://deepinfra.com/models?q=json); see [Structured Outputs](/chat/structured-outputs).
 
+<Note>
+  To pick a model, list the catalog with context windows and pricing via [`/v1/openai/models?filter=with_meta&sort_by=maf`](https://api.deepinfra.com/v1/openai/models?filter=with_meta&sort_by=maf). Each entry's `metadata` block has `context_length`, `max_tokens`, and per-million-token `pricing`; the `id` is what you pass as `model`.
+
+  ```bash
+  curl -s "https://api.deepinfra.com/v1/openai/models?filter=with_meta&sort_by=maf" \
+    | jq '.data[] | select(.metadata.tags | index("chat")) | {id, context_length: .metadata.context_length, pricing: .metadata.pricing}'
+  ```
+</Note>
+
 ### Environment variables
 
 The Python clients fall back to `OPENAI_API_KEY`, `OPENAI_BASE_URL`, and `OPENAI_CHAT_COMPLETION_MODEL` when constructor arguments are omitted, so you can also configure them that way:

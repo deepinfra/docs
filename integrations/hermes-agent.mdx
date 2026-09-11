@@ -27,7 +27,7 @@ Get your API key from the [Dashboard](https://deepinfra.com/dash/api_keys).
   - `provider: custom` is required for any non-built-in OpenAI-compatible endpoint, and `base_url` overrides `provider`.
   - The DeepInfra model id passes through verbatim in `default` — no reformatting needed.
   - `api_key` falls back to the `OPENAI_API_KEY` environment variable if omitted, and secrets can live in `~/.hermes/.env` instead of the YAML.
-  - Set `context_length` explicitly. Above it's the model's full 1M-token window; Hermes needs roughly 64k minimum for agent functionality. Check a model's window via [`/v1/openai/models?filter=with_meta`](https://api.deepinfra.com/v1/openai/models?filter=with_meta&sort_by=openclaw).
+  - Set `context_length` explicitly. Above it's the model's full 1M-token window; Hermes needs roughly 64k minimum for agent functionality. Check a model's window via [`/v1/openai/models?filter=with_meta&sort_by=hermes`](https://api.deepinfra.com/v1/openai/models?filter=with_meta&sort_by=hermes).
 </Note>
 
 ## Interactive alternative
