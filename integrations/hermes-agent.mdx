@@ -50,6 +50,22 @@ Hermes persists the choice and reuses it on every run.
 hermes
 ```
 
+## Sandboxes plugin
+
+Hermes also needs somewhere to actually execute the commands it runs — by default that's your local machine. The community plugin [`deepinfra-hermes-sandbox`](https://github.com/deepinfra/deepinfra-hermes-sandbox) swaps that terminal backend for [DeepInfra Sandboxes](/sandboxes/overview), so commands run inside an isolated microVM instead:
+
+```bash
+pip install git+https://github.com/deepinfra/deepinfra-hermes-sandbox
+hermes plugins enable deepinfra-sandbox
+hermes config set terminal.backend deepinfra
+```
+
+<Note>
+  The plugin's enable-name is `deepinfra-sandbox`, not `deepinfra` — Hermes already bundles two unrelated built-in plugins literally named `deepinfra` (its image-gen and video-gen backends), so `hermes plugins enable deepinfra` would silently enable one of those instead. `terminal.backend` is a separate config value and does stay `deepinfra`.
+</Note>
+
+It reuses the same `DEEPINFRA_API_KEY` you already have configured for inference — no separate credential. `/workspace` persists across turns within a session (the sandbox is stopped when idle and resumed automatically), but there's no cross-session persistence yet, and this is independent of which model/provider you configured above — you can point `model.provider` at DeepInfra, run the terminal backend elsewhere, or mix and match. See the [plugin's README](https://github.com/deepinfra/deepinfra-hermes-sandbox) for current limitations.
+
 ## Learn more
 
 <CardGroup cols={2}>
@@ -64,5 +80,11 @@ hermes
   </Card>
   <Card title="Authentication" icon="key" href="/account/authentication">
     API keys and scoped JWTs.
+  </Card>
+  <Card title="Sandboxes" icon="cube" href="/sandboxes/overview">
+    Isolated microVMs — plans, lifecycle, SDKs, and the HTTP API.
+  </Card>
+  <Card title="deepinfra-hermes-sandbox" icon="github" href="https://github.com/deepinfra/deepinfra-hermes-sandbox">
+    The terminal-backend plugin, install steps, and known limitations.
   </Card>
 </CardGroup>
