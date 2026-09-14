@@ -28,7 +28,7 @@ import os
 from crewai import LLM
 
 llm = LLM(
-    model="Qwen/Qwen3.5-27B",
+    model="deepseek-ai/DeepSeek-V4-Flash-0731",
     custom_openai=True,
     base_url="https://api.deepinfra.com/v1/openai",
     api_key=os.environ["DEEPINFRA_API_KEY"],
@@ -50,7 +50,7 @@ llm = LLM(
       @llm
       def deepinfra_llm(self) -> LLM:
           return LLM(
-              model="Qwen/Qwen3.5-27B",
+              model="deepseek-ai/DeepSeek-V4-Flash-0731",
               custom_openai=True,
               base_url="https://api.deepinfra.com/v1/openai",
               api_key=os.environ["DEEPINFRA_API_KEY"],
@@ -75,7 +75,7 @@ from crewai import Agent, Crew, LLM, Task
 from crewai.tools import tool
 
 llm = LLM(
-    model="Qwen/Qwen3.5-27B",
+    model="deepseek-ai/DeepSeek-V4-Flash-0731",
     custom_openai=True,
     base_url="https://api.deepinfra.com/v1/openai",
     api_key=os.environ["DEEPINFRA_API_KEY"],
@@ -112,11 +112,11 @@ print(result.token_usage)
 Example output:
 
 ```text
-Using the current exchange rate of 1.0842 EUR/USD, 250 euros is equal to 271.05 US dollars.
-total_tokens=1419 prompt_tokens=821 cached_prompt_tokens=0 completion_tokens=598 reasoning_tokens=0 cache_creation_tokens=0 successful_requests=2
+250 euros × 1.0842 = 271.05 US dollars, using the EUR/USD rate of 1.0842.
+total_tokens=906 prompt_tokens=830 cached_prompt_tokens=256 completion_tokens=76 reasoning_tokens=0 cache_creation_tokens=0 successful_requests=2
 ```
 
-Token counts come from DeepInfra's `usage` object on each response, so `result.token_usage` matches what you are billed for.
+Token counts come from DeepInfra's `usage` object on each response, so `result.token_usage` matches what you are billed for. `cached_prompt_tokens` shows DeepInfra's prompt caching kicking in on the second request of the run.
 
 ## Knowledge and memory with DeepInfra embeddings
 
@@ -129,7 +129,7 @@ from crewai import Agent, Crew, LLM, Task
 from crewai.knowledge.source.string_knowledge_source import StringKnowledgeSource
 
 llm = LLM(
-    model="Qwen/Qwen3.5-27B",
+    model="deepseek-ai/DeepSeek-V4-Flash-0731",
     custom_openai=True,
     base_url="https://api.deepinfra.com/v1/openai",
     api_key=os.environ["DEEPINFRA_API_KEY"],
@@ -171,7 +171,7 @@ print(crew.kickoff().raw)
 Example output:
 
 ```text
-Orbital Coffee's house blend is called Perihelion and wholesale ships on Tuesdays.
+Orbital Coffee's house blend is called Perihelion, and wholesale ships on Tuesdays.
 ```
 
 | Embedding model | Dimensions | Max input | Notes |
@@ -224,8 +224,8 @@ The agent loop depends on reliable tool calling. The models below are verified w
 
 | Model | Context | Good for |
 | --- | --- | --- |
-| `Qwen/Qwen3.5-27B` | 262K | Fast, inexpensive default with vision and reasoning |
-| `deepseek-ai/DeepSeek-V4-Flash` | 1M | Long documents at very low cost |
+| `deepseek-ai/DeepSeek-V4-Flash-0731` | 1M | Default in these examples: very low cost, prompt caching, long documents |
+| `Qwen/Qwen3.5-27B` | 262K | Fast and inexpensive, with vision and reasoning |
 | `zai-org/GLM-5.3` | 1M | Strong reasoning on complex multi-step tasks |
 | `meta-llama/Llama-4-Scout-17B-16E-Instruct` | 327K | Llama ecosystem, vision, wide language coverage |
 | `moonshotai/Kimi-K2.7-Code` | 262K | Coding agents |
@@ -243,7 +243,7 @@ The agent loop depends on reliable tool calling. The models below are verified w
 ## Tips
 
 - **Context window.** CrewAI looks model ids up in a table of OpenAI models to size its context management, and assumes 8,192 tokens for ids it does not know. With the default `respect_context_window=True`, an agent on a DeepInfra model starts summarising its conversation at roughly 7,000 tokens even when the model supports far more. Set `respect_context_window=False` on agents that need the full window; CrewAI then sends the full history and surfaces the provider error if a prompt ever exceeds the model's real limit.
-- **The `deepinfra/` prefix.** `LLM(model="deepinfra/Qwen/Qwen3.5-27B")` routes through LiteLLM, which reads `DEEPINFRA_API_KEY` from the environment. It needs `pip install "crewai[litellm]"`; without LiteLLM installed, constructing the `LLM` raises an `ImportError`. The `custom_openai=True` form above uses CrewAI's native client and has no extra dependency.
+- **The `deepinfra/` prefix.** `LLM(model="deepinfra/deepseek-ai/DeepSeek-V4-Flash-0731")` routes through LiteLLM, which reads `DEEPINFRA_API_KEY` from the environment. It needs `pip install "crewai[litellm]"`; without LiteLLM installed, constructing the `LLM` raises an `ImportError`. The `custom_openai=True` form above uses CrewAI's native client and has no extra dependency.
 - **Structured outputs.** Pass a Pydantic model as `response_format` on the `LLM` or as `output_pydantic` on a `Task`. CrewAI sends it as a strict JSON schema, which DeepInfra honours.
 - **Streaming.** Set `stream=True` on the `LLM` to receive tokens as they are generated. Usage is still reported on the final chunk.
 
