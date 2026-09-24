@@ -50,10 +50,12 @@ DeepInfra is an AI inference cloud that makes it simple to run the latest machin
 ## Quick example
 
 ```python
+import os
+
 from openai import OpenAI
 
 client = OpenAI(
-    api_key="$DEEPINFRA_TOKEN",
+    api_key=os.environ["DEEPINFRA_API_KEY"],
     base_url="https://api.deepinfra.com/v1/openai",
 )
 

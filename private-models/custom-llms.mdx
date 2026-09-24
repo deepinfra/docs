@@ -62,7 +62,7 @@ curl -X POST https://api.deepinfra.com/deploy/llm \
     }
   }' \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY"
 ```
 
 The model's full name will be `YOUR_GITHUB_USERNAME/model-name`.
@@ -73,7 +73,7 @@ Track status via the [Dashboard → Deployments](https://deepinfra.com/dash/depl
 
 ```bash
 curl https://api.deepinfra.com/deploy/list \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY"
 ```
 
 ## Use your deployment
@@ -88,7 +88,7 @@ Once running, inference via:
 ```bash
 curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -d '{
       "model": "YOUR_USERNAME/test-model",
       "messages": [{"role": "user", "content": "Hello!"}]

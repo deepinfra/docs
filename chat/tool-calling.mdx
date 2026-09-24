@@ -15,12 +15,14 @@ We provide an OpenAI-compatible tool calling API. For more background, see the [
 <CodeGroup>
 
 ```python Python
+import os
+
 import openai
 import json
 
 client = openai.OpenAI(
     base_url="https://api.deepinfra.com/v1/openai",
-    api_key="$DEEPINFRA_TOKEN",
+    api_key=os.environ["DEEPINFRA_API_KEY"],
 )
 ```
 
@@ -29,7 +31,7 @@ import OpenAI from "openai";
 
 const client = new OpenAI({
     baseURL: "https://api.deepinfra.com/v1/openai",
-    apiKey: "$DEEPINFRA_TOKEN",
+    apiKey: process.env.DEEPINFRA_API_KEY,
 });
 ```
 

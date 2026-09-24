@@ -17,10 +17,12 @@ POST https://api.deepinfra.com/v1/openai/embeddings
 <CodeGroup>
 
 ```python Python
+import os
+
 from openai import OpenAI
 
 openai = OpenAI(
-    api_key="$DEEPINFRA_TOKEN",
+    api_key=os.environ["DEEPINFRA_API_KEY"],
     base_url="https://api.deepinfra.com/v1/openai",
 )
 
@@ -42,7 +44,7 @@ import OpenAI from "openai";
 
 const openai = new OpenAI({
   baseURL: "https://api.deepinfra.com/v1/openai",
-  apiKey: "$DEEPINFRA_TOKEN",
+  apiKey: process.env.DEEPINFRA_API_KEY,
 });
 
 const input = "The quick brown fox jumped over the lazy dog";
@@ -61,7 +63,7 @@ console.log(embedding.usage.prompt_tokens);
 ```bash cURL
 curl "https://api.deepinfra.com/v1/openai/embeddings" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -d '{
     "input": "The food was delicious and the waiter...",
     "model": "Qwen/Qwen3-Embedding-8B",

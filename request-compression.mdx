@@ -24,7 +24,7 @@ echo '{
 }' | gzip | curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
   -H "Content-Encoding: gzip" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   --data-binary @-
 ```
 
@@ -44,7 +44,7 @@ response = requests.post(
     headers={
         "Content-Type": "application/json",
         "Content-Encoding": "gzip",
-        "Authorization": "Bearer $DEEPINFRA_TOKEN",
+        "Authorization": "Bearer $DEEPINFRA_API_KEY",
     },
 )
 print(response.json())
@@ -63,7 +63,7 @@ const response = await fetch("https://api.deepinfra.com/v1/openai/chat/completio
   headers: {
     "Content-Type": "application/json",
     "Content-Encoding": "gzip",
-    Authorization: "Bearer $DEEPINFRA_TOKEN",
+    Authorization: "Bearer $DEEPINFRA_API_KEY",
   },
   body: gzipSync(payload),
 });

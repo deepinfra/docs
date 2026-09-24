@@ -20,7 +20,7 @@ dotnet add package Microsoft.Agents.AI.OpenAI
 
 </CodeGroup>
 
-Get your API key from the [Dashboard](https://deepinfra.com/dash/api_keys) and export it as `DEEPINFRA_TOKEN`.
+Get your API key from the [Dashboard](https://deepinfra.com/dash/api_keys) and export it as `DEEPINFRA_API_KEY`.
 
 ## Configuration
 
@@ -39,7 +39,7 @@ from agent_framework.openai import OpenAIChatCompletionClient
 async def main() -> None:
     client = OpenAIChatCompletionClient(
         model="deepseek-ai/DeepSeek-V4-Flash-0731",
-        api_key=os.environ["DEEPINFRA_TOKEN"],
+        api_key=os.environ["DEEPINFRA_API_KEY"],
         base_url="https://api.deepinfra.com/v1/openai",
     )
     agent = Agent(client=client, instructions="You are a concise, helpful assistant.")
@@ -62,8 +62,8 @@ using System.ClientModel;
 using Microsoft.Agents.AI;
 using OpenAI;
 
-var apiKey = Environment.GetEnvironmentVariable("DEEPINFRA_TOKEN")
-    ?? throw new InvalidOperationException("DEEPINFRA_TOKEN is not set.");
+var apiKey = Environment.GetEnvironmentVariable("DEEPINFRA_API_KEY")
+    ?? throw new InvalidOperationException("DEEPINFRA_API_KEY is not set.");
 
 AIAgent agent = new OpenAIClient(
         new ApiKeyCredential(apiKey),
@@ -120,7 +120,7 @@ from agent_framework.openai import OpenAIEmbeddingClient
 
 client = OpenAIEmbeddingClient(
     model="Qwen/Qwen3-Embedding-8B",
-    api_key=os.environ["DEEPINFRA_TOKEN"],
+    api_key=os.environ["DEEPINFRA_API_KEY"],
     base_url="https://api.deepinfra.com/v1/openai",
 )
 result = await client.get_embeddings(["DeepInfra serves open models.", "Agents call tools."])
@@ -149,7 +149,7 @@ def deepinfra_reasoning_parser(message: Any, contents: list[Content]) -> list[Co
 agent = Agent(
     client=OpenAIChatCompletionClient(
         model="deepseek-ai/DeepSeek-V4-Flash-0731",
-        api_key=os.environ["DEEPINFRA_TOKEN"],
+        api_key=os.environ["DEEPINFRA_API_KEY"],
         base_url="https://api.deepinfra.com/v1/openai",
         response_parser=deepinfra_reasoning_parser,
     ),

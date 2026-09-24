@@ -29,7 +29,7 @@ import { TextGeneration } from "deepinfra";
 
 const client = new TextGeneration(
   "https://api.deepinfra.com/v1/inference/deepseek-ai/DeepSeek-V4-Flash-0731",
-  "$DEEPINFRA_TOKEN"
+  process.env.DEEPINFRA_API_KEY
 );
 
 const res = await client.generate({
@@ -44,7 +44,7 @@ console.log(res.num_input_tokens, res.num_tokens);
 ```bash
 curl "https://api.deepinfra.com/v1/inference/deepseek-ai/DeepSeek-V4-Flash-0731" \
    -H "Content-Type: application/json" \
-   -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+   -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
    -d '{
      "input": "The capital of France is",
      "max_new_tokens": 20,
@@ -57,7 +57,7 @@ curl "https://api.deepinfra.com/v1/inference/deepseek-ai/DeepSeek-V4-Flash-0731"
 ```javascript
 import { Embeddings } from "deepinfra";
 
-const client = new Embeddings("Qwen/Qwen3-Embedding-8B", "$DEEPINFRA_TOKEN");
+const client = new Embeddings("Qwen/Qwen3-Embedding-8B", process.env.DEEPINFRA_API_KEY);
 const output = await client.generate({
   inputs: [
     "What is the capital of France?",
@@ -69,7 +69,7 @@ console.log(output.embeddings[0]);
 
 ```bash
 curl -X POST \
-    -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+    -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
     -F 'inputs=["I like chocolate"]' \
     'https://api.deepinfra.com/v1/inference/Qwen/Qwen3-Embedding-8B'
 ```
@@ -81,7 +81,7 @@ import { TextToImage } from "deepinfra";
 import { createWriteStream } from "fs";
 import { Readable } from "stream";
 
-const model = new TextToImage("stabilityai/sdxl-turbo", "$DEEPINFRA_TOKEN");
+const model = new TextToImage("stabilityai/sdxl-turbo", process.env.DEEPINFRA_API_KEY);
 const response = await model.generate({
   prompt: "a burger with a funny hat on the beach",
 });
@@ -95,7 +95,7 @@ if (result.ok && result.body) {
 ```bash
 curl "https://api.deepinfra.com/v1/inference/stabilityai/sdxl-turbo" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -d '{"prompt": "a burger with a funny hat on the beach"}'
 ```
 
@@ -103,7 +103,7 @@ curl "https://api.deepinfra.com/v1/inference/stabilityai/sdxl-turbo" \
 
 ```bash
 curl -X POST \
-    -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+    -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
     -F audio=@audio.mp3 \
     'https://api.deepinfra.com/v1/inference/openai/whisper-large-v3'
 ```
@@ -112,7 +112,7 @@ curl -X POST \
 
 ```bash
 curl -X POST \
-    -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+    -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
     -F image=@image.jpg \
     -F 'candidate_labels=["dog", "cat", "car", "horse", "person"]' \
     'https://api.deepinfra.com/v1/inference/openai/clip-vit-base-patch32'

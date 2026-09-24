@@ -17,15 +17,17 @@ POST https://api.deepinfra.com/v1/inference/{model_name}
 <CodeGroup>
 
 ```python Python
+import os
+
 import requests
 
-DEEPINFRA_TOKEN = "$DEEPINFRA_TOKEN"
+DEEPINFRA_API_KEY = os.environ["DEEPINFRA_API_KEY"]
 MODEL = "hexgrad/Kokoro-82M"
 
 response = requests.post(
     f"https://api.deepinfra.com/v1/inference/{MODEL}",
     headers={
-        "Authorization": f"Bearer {DEEPINFRA_TOKEN}",
+        "Authorization": f"Bearer {DEEPINFRA_API_KEY}",
         "Content-Type": "application/json",
     },
     json={
@@ -40,7 +42,7 @@ with open("output.wav", "wb") as f:
 
 ```bash cURL
 curl -X POST \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"text": "Hello! This is a text-to-speech example using DeepInfra."}' \
   'https://api.deepinfra.com/v1/inference/hexgrad/Kokoro-82M' \

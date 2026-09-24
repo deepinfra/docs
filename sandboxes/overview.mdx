@@ -187,7 +187,7 @@ Create a sandbox:
 
 ```bash
 curl -X POST https://api.deepinfra.com/v1/sandboxes \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "plan": "medium",
@@ -204,17 +204,17 @@ Get or list sandboxes:
 
 ```bash
 curl https://api.deepinfra.com/v1/sandboxes/{sandbox_id} \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY"
 
 curl https://api.deepinfra.com/v1/sandboxes \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY"
 ```
 
 Run a command — the response is streamed as `application/x-ndjson`, one JSON object per line, ending in exactly one terminal line (`{"returncode": N}` on completion, or `{"error": "..."}` if the command timed out or otherwise couldn't finish):
 
 ```bash
 curl -N -X POST https://api.deepinfra.com/v1/sandboxes/{sandbox_id}/exec \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"command": ["bash", "-c", "echo hi"], "timeout_seconds": 60}'
 ```
@@ -232,32 +232,32 @@ Move files in and out — both are scoped to `/workspace` and capped at 100 MiB 
 
 ```bash
 curl -X PUT "https://api.deepinfra.com/v1/sandboxes/{sandbox_id}/fs/content?path=/workspace/in.csv" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -H "Content-Type: application/octet-stream" \
   --data-binary $'a,b\n1,2\n'
 
 curl "https://api.deepinfra.com/v1/sandboxes/{sandbox_id}/fs/content?path=/workspace/in.csv" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY"
 ```
 
 Stop, start, or terminate:
 
 ```bash
 curl -X POST https://api.deepinfra.com/v1/sandboxes/{sandbox_id}/stop \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY"
 
 curl -X POST https://api.deepinfra.com/v1/sandboxes/{sandbox_id}/start \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY"
 
 curl -X DELETE https://api.deepinfra.com/v1/sandboxes/{sandbox_id} \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY"
 ```
 
 List available plans and current pricing:
 
 ```bash
 curl https://api.deepinfra.com/v1/sandboxes/catalog \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY"
 ```
 
 See the [API Reference](https://docs.deepinfra.com/api-reference) for full schemas.

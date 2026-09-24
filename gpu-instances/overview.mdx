@@ -65,7 +65,7 @@ DeepInfra GPU Instances give you dedicated access to NVIDIA B200 hardware — th
 
 ```bash
 curl -X POST https://api.deepinfra.com/v1/containers \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "my-cluster",
@@ -79,7 +79,7 @@ curl -X POST https://api.deepinfra.com/v1/containers \
 
 ```bash
 curl -X GET https://api.deepinfra.com/v1/containers/{container_id} \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY"
 ```
 
 Once `running`, connect via SSH:
@@ -92,14 +92,14 @@ ssh ubuntu@<container-ip>
 
 ```bash
 curl -X GET https://api.deepinfra.com/v1/containers \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY"
 ```
 
 ### Terminate a container
 
 ```bash
 curl -X DELETE https://api.deepinfra.com/v1/containers/{container_id} \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY"
 ```
 
 ## Container lifecycle

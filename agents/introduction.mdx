@@ -103,7 +103,7 @@ Create an instance:
 
 ```bash
 curl -X POST https://api.deepinfra.com/v1/agents \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "my-agent",
@@ -116,27 +116,27 @@ List your instances:
 
 ```bash
 curl "https://api.deepinfra.com/v1/agents?state=all" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY"
 ```
 
 Start, stop, or update:
 
 ```bash
 curl -X POST https://api.deepinfra.com/v1/agents/{instance_id}/start \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY"
 
 curl -X POST https://api.deepinfra.com/v1/agents/{instance_id}/stop \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY"
 
 curl -X POST https://api.deepinfra.com/v1/agents/{instance_id}/update \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY"
 ```
 
 Delete:
 
 ```bash
 curl -X DELETE https://api.deepinfra.com/v1/agents/{instance_id} \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN"
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY"
 ```
 
 Other endpoints: `GET /v1/agents/catalog` (frameworks, plans, and current pricing), `GET /v1/agents/{instance_id}/backups`, `POST /v1/agents/{instance_id}/backup`, and `POST /v1/agents/{instance_id}/backups/{backup_id}/restore`. See the [API Reference](https://docs.deepinfra.com/api-reference) for full schemas.

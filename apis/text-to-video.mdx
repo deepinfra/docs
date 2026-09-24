@@ -17,15 +17,17 @@ POST https://api.deepinfra.com/v1/inference/{model_name}
 <CodeGroup>
 
 ```python Python
+import os
+
 import requests
 
-DEEPINFRA_TOKEN = "$DEEPINFRA_TOKEN"
+DEEPINFRA_API_KEY = os.environ["DEEPINFRA_API_KEY"]
 MODEL = "Wan-AI/Wan2.2-T2V-A14B"
 
 response = requests.post(
     f"https://api.deepinfra.com/v1/inference/{MODEL}",
     headers={
-        "Authorization": f"Bearer {DEEPINFRA_TOKEN}",
+        "Authorization": f"Bearer {DEEPINFRA_API_KEY}",
         "Content-Type": "application/json",
     },
     json={
@@ -45,7 +47,7 @@ with open("video.mp4", "wb") as f:
 
 ```bash cURL
 curl -X POST \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"prompt": "A serene mountain lake at sunrise, with mist rising from the water and pine trees reflected on the surface."}' \
   'https://api.deepinfra.com/v1/inference/Wan-AI/Wan2.2-T2V-A14B'
