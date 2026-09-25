@@ -34,10 +34,12 @@ npm install openai
 <CodeGroup>
 
 ```python Python
+import os
+
 from openai import OpenAI
 
 openai = OpenAI(
-    api_key="$DEEPINFRA_TOKEN",
+    api_key=os.environ["DEEPINFRA_API_KEY"],
     base_url="https://api.deepinfra.com/v1/openai",
 )
 
@@ -54,7 +56,7 @@ print(chat_completion.usage.prompt_tokens, chat_completion.usage.completion_toke
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: "$DEEPINFRA_TOKEN",
+  apiKey: process.env.DEEPINFRA_API_KEY,
   baseURL: "https://api.deepinfra.com/v1/openai",
 });
 
@@ -70,7 +72,7 @@ console.log(completion.usage.prompt_tokens, completion.usage.completion_tokens);
 ```bash cURL
 curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -d '{
       "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "messages": [
@@ -91,10 +93,12 @@ To create a longer conversation, include the full message history in every reque
 <CodeGroup>
 
 ```python Python
+import os
+
 from openai import OpenAI
 
 openai = OpenAI(
-    api_key="$DEEPINFRA_TOKEN",
+    api_key=os.environ["DEEPINFRA_API_KEY"],
     base_url="https://api.deepinfra.com/v1/openai",
 )
 
@@ -116,7 +120,7 @@ import OpenAI from "openai";
 
 const openai = new OpenAI({
   baseURL: "https://api.deepinfra.com/v1/openai",
-  apiKey: "$DEEPINFRA_TOKEN",
+  apiKey: process.env.DEEPINFRA_API_KEY,
 });
 
 const completion = await openai.chat.completions.create({
@@ -135,7 +139,7 @@ console.log(completion.choices[0].message.content);
 ```bash cURL
 curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -d '{
       "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "messages": [
@@ -210,7 +214,7 @@ const response = await openai.chat.completions.create({
 ```bash cURL
 curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -d '{
       "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "service_tier": "priority",
@@ -254,7 +258,7 @@ const response = await openai.chat.completions.create({
 ```bash cURL
 curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -d '{
       "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "service_tier": "flex",
@@ -298,7 +302,7 @@ const response = await openai.chat.completions.create({
 ```bash cURL
 curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -d '{
       "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "fail_fast": true,
@@ -345,7 +349,7 @@ If you need a longer response, use response continuation: send a follow-up reque
 ```bash
 curl "https://api.deepinfra.com/v1/openai/chat/completions" \
     -H "Content-Type: application/json" \
-    -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+    -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
     -d '{
         "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
         "messages": [

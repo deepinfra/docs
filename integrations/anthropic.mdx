@@ -25,8 +25,8 @@ Both standard Anthropic authentication methods are supported:
 
 | Header | Example |
 |--------|---------|
-| `Authorization` | `Bearer $DEEPINFRA_TOKEN` |
-| `x-api-key` | `$DEEPINFRA_TOKEN` |
+| `Authorization` | `Bearer $DEEPINFRA_API_KEY` |
+| `x-api-key` | `$DEEPINFRA_API_KEY` |
 
 You can also pass `anthropic-version` and `anthropic-beta` headers as needed.
 
@@ -53,11 +53,13 @@ Point the client at the DeepInfra endpoint and pass a DeepInfra model name:
 <CodeGroup>
 
 ```python Python
+import os
+
 import anthropic
 
 client = anthropic.Anthropic(
     base_url="https://api.deepinfra.com/anthropic",
-    api_key="$DEEPINFRA_TOKEN",
+    api_key=os.environ["DEEPINFRA_API_KEY"],
 )
 
 message = client.messages.create(
@@ -76,7 +78,7 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const client = new Anthropic({
   baseURL: "https://api.deepinfra.com/anthropic",
-  apiKey: "$DEEPINFRA_TOKEN",
+  apiKey: process.env.DEEPINFRA_API_KEY,
 });
 
 const message = await client.messages.create({
@@ -93,7 +95,7 @@ console.log(message.content[0].text);
 ```bash cURL
 curl "https://api.deepinfra.com/anthropic/v1/messages" \
   -H "Content-Type: application/json" \
-  -H "x-api-key: $DEEPINFRA_TOKEN" \
+  -H "x-api-key: $DEEPINFRA_API_KEY" \
   -H "anthropic-version: 2023-06-01" \
   -d '{
       "model": "zai-org/GLM-5.2",
@@ -175,7 +177,7 @@ If you'd rather keep your default Claude Code setup untouched and switch per-inv
 ```bash
 deepinfra() {
   export ANTHROPIC_BASE_URL=https://api.deepinfra.com/anthropic
-  export ANTHROPIC_AUTH_TOKEN=$DEEPINFRA_TOKEN
+  export ANTHROPIC_AUTH_TOKEN=$DEEPINFRA_API_KEY
   export ANTHROPIC_MODEL=deepseek-ai/DeepSeek-V4-Flash-0731
   export ANTHROPIC_DEFAULT_FABLE_MODEL=moonshotai/Kimi-K3
   export ANTHROPIC_DEFAULT_OPUS_MODEL=deepseek-ai/DeepSeek-V4-Pro-0813
@@ -230,7 +232,7 @@ Count the tokens in a message request before sending it:
 ```bash
 curl "https://api.deepinfra.com/anthropic/v1/messages/count_tokens" \
   -H "Content-Type: application/json" \
-  -H "x-api-key: $DEEPINFRA_TOKEN" \
+  -H "x-api-key: $DEEPINFRA_API_KEY" \
   -d '{
       "model": "zai-org/GLM-5.2",
       "messages": [

@@ -30,7 +30,7 @@ The deployment appears in [Dashboard → Deployments](https://deepinfra.com/dash
 ```bash
 curl "https://api.deepinfra.com/yourname/yourmodel" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -d '{
       "prompt": "A cat in anime style",
       "lora_scale": 0.7
@@ -42,7 +42,7 @@ curl "https://api.deepinfra.com/yourname/yourmodel" \
 ```bash
 curl "https://api.deepinfra.com/v1/openai/images/generations" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -d '{
       "model": "yourname/yourmodel",
       "prompt": "A cat in anime style"

@@ -8,7 +8,11 @@ You don't need to install anything to do your first inference. You only need [yo
 
 ## Step 1: Get your API key
 
-Go to the [Dashboard](https://deepinfra.com/dash/api_keys) and create an API key (new to DeepInfra? See [Signing In](/account/signing-in)). If you're logged in, examples throughout the docs will have your token pre-filled.
+Go to the [Dashboard](https://deepinfra.com/dash/api_keys) and create an API key (new to DeepInfra? See [Signing In](/account/signing-in)). Copy it when it is shown and export it, so the examples below can read it:
+
+```bash
+export DEEPINFRA_API_KEY=<your DeepInfra API key>
+```
 
 ## Step 2: Make your first API call
 
@@ -17,7 +21,7 @@ Go to the [Dashboard](https://deepinfra.com/dash/api_keys) and create an API key
 ```bash cURL
 curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -d '{
       "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "messages": [
@@ -30,10 +34,12 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
 ```
 
 ```python Python
+import os
+
 from openai import OpenAI
 
 client = OpenAI(
-    api_key="$DEEPINFRA_TOKEN",
+    api_key=os.environ["DEEPINFRA_API_KEY"],
     base_url="https://api.deepinfra.com/v1/openai",
 )
 
@@ -48,7 +54,7 @@ print(response.choices[0].message.content)
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: "$DEEPINFRA_TOKEN",
+  apiKey: process.env.DEEPINFRA_API_KEY,
   baseURL: "https://api.deepinfra.com/v1/openai",
 });
 

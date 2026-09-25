@@ -30,7 +30,7 @@ Images are passed in two ways:
 ```bash
 curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -d '{
     "model": "Qwen/Qwen3-VL-235B-A22B-Instruct",
     "messages": [
@@ -56,12 +56,14 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
 ### Base64 encoded image
 
 ```python
+import os
+
 from openai import OpenAI
 import base64
 import requests
 
 openai = OpenAI(
-    api_key="$DEEPINFRA_TOKEN",
+    api_key=os.environ["DEEPINFRA_API_KEY"],
     base_url="https://api.deepinfra.com/v1/openai",
 )
 
@@ -97,11 +99,13 @@ print(chat_completion.choices[0].message.content)
 Extract all text from a document image:
 
 ```python
+import os
+
 from openai import OpenAI
 import base64
 
 openai = OpenAI(
-    api_key="$DEEPINFRA_TOKEN",
+    api_key=os.environ["DEEPINFRA_API_KEY"],
     base_url="https://api.deepinfra.com/v1/openai",
 )
 
@@ -143,7 +147,7 @@ You can pass multiple images in a single request by including multiple `image_ur
 ```bash
 curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -d '{
     "model": "Qwen/Qwen3-VL-235B-A22B-Instruct",
     "messages": [

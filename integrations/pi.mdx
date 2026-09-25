@@ -16,7 +16,7 @@ Add a `deepinfra` provider to your Pi configuration. See Pi's [custom provider d
     "deepinfra": {
       "name": "DeepInfra",
       "baseUrl": "https://api.deepinfra.com/v1/openai",
-      "apiKey": "$DEEPINFRA_TOKEN",
+      "apiKey": "$DEEPINFRA_API_KEY",
       "api": "openai-completions",
       "models": [
         {
@@ -45,7 +45,7 @@ Get your API key from the [Dashboard](https://deepinfra.com/dash/api_keys).
 Set your API key in the environment and launch Pi against the model:
 
 ```bash
-export DEEPINFRA_TOKEN=<your DeepInfra API token>
+export DEEPINFRA_API_KEY=<your DeepInfra API key>
 pi --model deepinfra/deepseek-ai/DeepSeek-V4-Flash
 ```
 
@@ -81,7 +81,7 @@ means Pi sent the system prompt with the `developer` role, which isn't accepted.
 
 ```bash
 curl -s https://api.deepinfra.com/v1/openai/chat/completions \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "deepseek-ai/DeepSeek-V4-Flash",

@@ -19,15 +19,17 @@ POST https://api.deepinfra.com/v1/inference/{model_name}
 <CodeGroup>
 
 ```python Python
+import os
+
 import requests
 
-DEEPINFRA_TOKEN = "$DEEPINFRA_TOKEN"
+DEEPINFRA_API_KEY = os.environ["DEEPINFRA_API_KEY"]
 MODEL = "Qwen/Qwen3-Reranker-8B"
 
 response = requests.post(
     f"https://api.deepinfra.com/v1/inference/{MODEL}",
     headers={
-        "Authorization": f"Bearer {DEEPINFRA_TOKEN}",
+        "Authorization": f"Bearer {DEEPINFRA_API_KEY}",
         "Content-Type": "application/json",
     },
     json={
@@ -48,7 +50,7 @@ for item in result["scores"]:
 
 ```bash cURL
 curl -X POST \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "queries": ["What is the capital of France?"],
@@ -94,7 +96,7 @@ candidates = vector_db.search(query, top_k=50)
 # 2. Rerank
 response = requests.post(
     "https://api.deepinfra.com/v1/inference/Qwen/Qwen3-Reranker-8B",
-    headers={"Authorization": f"Bearer {DEEPINFRA_TOKEN}", "Content-Type": "application/json"},
+    headers={"Authorization": f"Bearer {DEEPINFRA_API_KEY}", "Content-Type": "application/json"},
     json={"queries": [query], "documents": [c["text"] for c in candidates]},
 )
 scores = response.json()["scores"]

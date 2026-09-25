@@ -18,10 +18,12 @@ When you send a request, DeepInfra checks whether the beginning of your prompt m
 Prompt caching is **automatic** — no extra parameters required. Just structure your prompts so that the reused content appears at the beginning.
 
 ```python
+import os
+
 from openai import OpenAI
 
 client = OpenAI(
-    api_key="$DEEPINFRA_TOKEN",
+    api_key=os.environ["DEEPINFRA_API_KEY"],
     base_url="https://api.deepinfra.com/v1/openai",
 )
 
@@ -95,10 +97,12 @@ We recommend using a **session-scoped key** like `userid-chatsessionid` (e.g. `"
 <CodeGroup>
 
 ```python Python
+import os
+
 from openai import OpenAI
 
 client = OpenAI(
-    api_key="$DEEPINFRA_TOKEN",
+    api_key=os.environ["DEEPINFRA_API_KEY"],
     base_url="https://api.deepinfra.com/v1/openai",
 )
 
@@ -116,7 +120,7 @@ response = client.chat.completions.create(
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: "$DEEPINFRA_TOKEN",
+  apiKey: process.env.DEEPINFRA_API_KEY,
   baseURL: "https://api.deepinfra.com/v1/openai",
 });
 
@@ -133,7 +137,7 @@ const response = await openai.chat.completions.create({
 ```bash cURL
 curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -d '{
       "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "prompt_cache_key": "user123-chat456",

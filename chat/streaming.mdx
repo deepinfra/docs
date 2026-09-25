@@ -11,10 +11,12 @@ DeepInfra supports streaming responses via server-sent events (SSE), the same pr
 <CodeGroup>
 
 ```python Python
+import os
+
 from openai import OpenAI
 
 openai = OpenAI(
-    api_key="$DEEPINFRA_TOKEN",
+    api_key=os.environ["DEEPINFRA_API_KEY"],
     base_url="https://api.deepinfra.com/v1/openai",
 )
 
@@ -37,7 +39,7 @@ for event in stream:
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: "$DEEPINFRA_TOKEN",
+  apiKey: process.env.DEEPINFRA_API_KEY,
   baseURL: "https://api.deepinfra.com/v1/openai",
 });
 
@@ -61,7 +63,7 @@ for await (const chunk of completion) {
 ```bash cURL
 curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -d '{
       "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "stream": true,

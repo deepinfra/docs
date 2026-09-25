@@ -22,7 +22,7 @@ Get your API key from the [Dashboard](https://deepinfra.com/dash/api_keys).
 import { createDeepInfra } from "@ai-sdk/deepinfra";
 import { generateText } from "ai";
 
-const deepinfra = createDeepInfra({ apiKey: "$DEEPINFRA_TOKEN" });
+const deepinfra = createDeepInfra({ apiKey: process.env.DEEPINFRA_API_KEY });
 
 const { text, usage, finishReason } = await generateText({
   model: deepinfra("deepseek-ai/DeepSeek-V4-Flash-0731"),
@@ -48,7 +48,7 @@ const { text } = await generateText({
 import { createDeepInfra } from "@ai-sdk/deepinfra";
 import { streamText } from "ai";
 
-const deepinfra = createDeepInfra({ apiKey: "$DEEPINFRA_TOKEN" });
+const deepinfra = createDeepInfra({ apiKey: process.env.DEEPINFRA_API_KEY });
 
 const result = streamText({
   model: deepinfra("deepseek-ai/DeepSeek-V4-Flash-0731"),
@@ -86,7 +86,7 @@ import { createDeepInfra } from "@ai-sdk/deepinfra";
 import { generateObject } from "ai";
 import { z } from "zod";
 
-const deepinfra = createDeepInfra({ apiKey: "$DEEPINFRA_TOKEN" });
+const deepinfra = createDeepInfra({ apiKey: process.env.DEEPINFRA_API_KEY });
 
 const { object } = await generateObject({
   model: deepinfra("deepseek-ai/DeepSeek-V4-Flash-0731"),
@@ -121,7 +121,7 @@ import { createDeepInfra } from "@ai-sdk/deepinfra";
 import { generateText, tool } from "ai";
 import { z } from "zod";
 
-const deepinfra = createDeepInfra({ apiKey: "$DEEPINFRA_TOKEN" });
+const deepinfra = createDeepInfra({ apiKey: process.env.DEEPINFRA_API_KEY });
 
 const result = await generateText({
   model: deepinfra("deepseek-ai/DeepSeek-V4-Flash-0731"),

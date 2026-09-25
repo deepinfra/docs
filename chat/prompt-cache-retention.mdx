@@ -15,10 +15,12 @@ Send `prompt_cache_key` with every request in a session. Add `prompt_cache_optio
 <CodeGroup>
 
 ```python Python
+import os
+
 from openai import OpenAI
 
 client = OpenAI(
-    api_key="$DEEPINFRA_TOKEN",
+    api_key=os.environ["DEEPINFRA_API_KEY"],
     base_url="https://api.deepinfra.com/v1/openai",
 )
 
@@ -38,7 +40,7 @@ print(resp.usage.prompt_tokens_details)
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: "$DEEPINFRA_TOKEN",
+  apiKey: process.env.DEEPINFRA_API_KEY,
   baseURL: "https://api.deepinfra.com/v1/openai",
 });
 
@@ -53,7 +55,7 @@ const resp = await openai.chat.completions.create({
 ```bash cURL
 curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -d '{
       "model": "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
       "messages": [{"role": "system", "content": "..."}],

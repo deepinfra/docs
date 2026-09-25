@@ -25,10 +25,12 @@ Use `reasoning_effort` to control how much reasoning the model performs. Higher 
 <CodeGroup>
 
 ```python Python
+import os
+
 from openai import OpenAI
 
 client = OpenAI(
-    api_key="$DEEPINFRA_TOKEN",
+    api_key=os.environ["DEEPINFRA_API_KEY"],
     base_url="https://api.deepinfra.com/v1/openai",
 )
 
@@ -45,7 +47,7 @@ print(response.choices[0].message.content)
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: "$DEEPINFRA_TOKEN",
+  apiKey: process.env.DEEPINFRA_API_KEY,
   baseURL: "https://api.deepinfra.com/v1/openai",
 });
 
@@ -61,7 +63,7 @@ console.log(response.choices[0].message.content);
 ```bash cURL
 curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -d '{
       "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "reasoning_effort": "high",
@@ -101,7 +103,7 @@ const response = await openai.chat.completions.create({
 ```bash cURL
 curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -d '{
       "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "reasoning_effort": "none",
@@ -149,7 +151,7 @@ const response = await openai.chat.completions.create({
 ```bash cURL
 curl "https://api.deepinfra.com/v1/openai/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -d '{
       "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
       "reasoning": {

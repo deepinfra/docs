@@ -17,12 +17,14 @@ pip install llama-index-llms-deepinfra
 ### Initialization
 
 ```python
+import os
+
 from llama_index.llms.deepinfra import DeepInfraLLM
 import asyncio
 
 llm = DeepInfraLLM(
     model="deepseek-ai/DeepSeek-V4-Flash-0731",
-    api_key="$DEEPINFRA_TOKEN",
+    api_key=os.environ["DEEPINFRA_API_KEY"],
     temperature=0.5,
     max_tokens=50,
     additional_kwargs={"top_p": 0.9},
@@ -106,6 +108,8 @@ pip install llama-index llama-index-embeddings-deepinfra
 ### Initialization
 
 ```python
+import os
+
 from dotenv import load_dotenv, find_dotenv
 from llama_index.embeddings.deepinfra import DeepInfraEmbeddingModel
 
@@ -113,7 +117,7 @@ _ = load_dotenv(find_dotenv())
 
 model = DeepInfraEmbeddingModel(
     model_id="Qwen/Qwen3-Embedding-8B",
-    api_token="$DEEPINFRA_TOKEN",
+    api_token=os.environ["DEEPINFRA_API_KEY"],
     normalize=True,
     text_prefix="text: ",
     query_prefix="query: ",
