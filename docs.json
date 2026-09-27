@@ -124,7 +124,8 @@
               "integrations/crewai",
               "integrations/microsoft-agent-framework",
               "integrations/pi",
-              "integrations/hermes-agent"
+              "integrations/hermes-agent",
+              "integrations/openshell"
             ]
           },
           {
