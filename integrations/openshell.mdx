@@ -33,16 +33,16 @@ Imported 1 provider profile.
 Created sandbox: di-smoke
 ```
 
-The profile allows one endpoint, `api.deepinfra.com:443`, for two client binaries, `/usr/bin/curl` and `/usr/local/bin/curl`. OpenShell's default image has no `curl`, so the sandbox uses the official [`curlimages/curl`](https://hub.docker.com/r/curlimages/curl) image, and `sleep infinity` keeps it alive for the checks below. Run the profile's own smoke test, the public models list; `jq` runs on your host:
+The profile allows one endpoint, `api.deepinfra.com:443`, for two client binaries, `/usr/bin/curl` and `/usr/local/bin/curl`. OpenShell's default image has no `curl`, so the sandbox uses the official [`curlimages/curl`](https://hub.docker.com/r/curlimages/curl) image, and `sleep infinity` keeps it alive for the checks below. Run the profile's own smoke test, the public model catalog with metadata in the curated agent order; `jq` runs on your host:
 
 ```bash
-openshell sandbox exec -n di-smoke --no-login-shell -- curl -sS https://api.deepinfra.com/v1/openai/models | jq -r '.data[:3][].id'
+openshell sandbox exec -n di-smoke --no-login-shell -- curl -sS "https://api.deepinfra.com/v1/openai/models?filter=with_meta&sort_by=openshell" | jq -r '.data[:3][].id'
 ```
 
 ```text
-zai-org/GLM-5.2
-Qwen/Qwen3-14B
-mistralai/Mistral-Nemo-Instruct-2407
+deepseek-ai/DeepSeek-V4-Flash
+Qwen/Qwen3.5-397B-A17B
+moonshotai/Kimi-K2.6
 ```
 
 <Note>
