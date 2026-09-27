@@ -1,6 +1,6 @@
 ---
 title: Hermes Agent
-description: Use DeepInfra models with Hermes Agent by adding a custom OpenAI-compatible provider.
+description: Use DeepInfra models with Hermes Agent through its built-in DeepInfra provider.
 icon: robot
 ---
 
@@ -8,41 +8,28 @@ icon: robot
   Don't want to host it yourself? DeepInfra can run Hermes for you — see [Hosted Agents: Hermes-Agent](/agents/hermes-agent).
 </Note>
 
-[Hermes Agent](https://github.com/NousResearch/hermes-agent) is a self-hosted, self-improving autonomous agent by Nous Research. DeepInfra isn't a built-in provider, but Hermes works with any OpenAI-compatible endpoint (`/v1/chat/completions`) — so you add DeepInfra as a `custom` provider and use any [LLM from our catalog](https://deepinfra.com/models/text-generation).
+[Hermes Agent](https://github.com/NousResearch/hermes-agent) is a self-hosted, self-improving autonomous agent by Nous Research. DeepInfra is a built-in Hermes provider: set `provider: deepinfra`, export your key as `DEEPINFRA_API_KEY`, and pick any [LLM from our catalog](https://deepinfra.com/models/text-generation). Hermes reads the model list, context lengths and pricing live from the DeepInfra catalog, so there is no base URL or context length to configure.
 
 ## Configure `~/.hermes/config.yaml`
 
 ```yaml
 model:
   default: deepseek-ai/DeepSeek-V4-Flash
-  provider: custom
-  base_url: https://api.deepinfra.com/v1/openai
-  api_key: ${DEEPINFRA_API_KEY}
-  context_length: 1048576
+  provider: deepinfra
 ```
 
-Get your API key from the [Dashboard](https://deepinfra.com/dash/api_keys).
-
-<Note>
-  - `provider: custom` is required for any non-built-in OpenAI-compatible endpoint, and `base_url` overrides `provider`.
-  - The DeepInfra model id passes through verbatim in `default` — no reformatting needed.
-  - `api_key` falls back to the `OPENAI_API_KEY` environment variable if omitted, and secrets can live in `~/.hermes/.env` instead of the YAML.
-  - Set `context_length` explicitly. Above it's the model's full 1M-token window; Hermes needs roughly 64k minimum for agent functionality. Check a model's window via [`/v1/openai/models?filter=with_meta&sort_by=hermes`](https://api.deepinfra.com/v1/openai/models?filter=with_meta&sort_by=hermes).
-</Note>
-
-## Interactive alternative
-
-Instead of editing the YAML by hand, run the model wizard and pick the custom endpoint:
+Get your API key from the [Dashboard](https://deepinfra.com/dash/api_keys) and export it, or put the same line in `~/.hermes/.env`:
 
 ```bash
-hermes model
-# Choose: "Custom endpoint"
-# Base URL: https://api.deepinfra.com/v1/openai
-# API key:  <your DeepInfra API token>
-# Model:    deepseek-ai/DeepSeek-V4-Flash
+export DEEPINFRA_API_KEY="<your DeepInfra API key here>"
 ```
 
-Hermes persists the choice and reuses it on every run.
+<Note>
+  - The DeepInfra model id passes through verbatim in `default` — no reformatting needed.
+  - Reasoning is controlled through DeepInfra's `reasoning_effort` field, so `agent.reasoning_effort`, `/reasoning <level>` and `--reasoning` work in both directions: an effort turns thinking on for models that default off (DeepSeek-V4.x), and `/reasoning none` turns it off for models that default on.
+  - Hermes needs roughly 64k of context for agent functionality. Check a model's window and pricing via [`/v1/openai/models?filter=with_meta&sort_by=hermes`](https://api.deepinfra.com/v1/openai/models?filter=with_meta&sort_by=hermes).
+  - On a Hermes release older than the built-in provider, use `provider: custom` with `base_url: https://api.deepinfra.com/v1/openai`, `api_key: ${DEEPINFRA_API_KEY}` and an explicit `context_length`.
+</Note>
 
 ## Run it
 
@@ -50,11 +37,17 @@ Hermes persists the choice and reuses it on every run.
 hermes
 ```
 
+To try a model without editing the YAML, pass the provider and model on the command line:
+
+```bash
+hermes chat --provider deepinfra -m deepseek-ai/DeepSeek-V4-Flash -q "Say hello in one word."
+```
+
 ## Learn more
 
 <CardGroup cols={2}>
-  <Card title="AI Providers" icon="plug" href="https://hermes-agent.nousresearch.com/docs/integrations/providers">
-    Hermes' provider overview and custom-endpoint option.
+  <Card title="AI Providers" icon="plug" href="https://hermes-agent.nousresearch.com/docs/integrations/providers#deepinfra">
+    Hermes' provider overview, including the DeepInfra section.
   </Card>
   <Card title="Configuration" icon="gear" href="https://hermes-agent.nousresearch.com/docs/user-guide/configuration">
     The full `config.yaml` reference.
@@ -62,7 +55,11 @@ hermes
   <Card title="Chat Completions" icon="comments" href="/chat/overview">
     DeepInfra's OpenAI-compatible API.
   </Card>
-  <Card title="Authentication" icon="key" href="/account/authentication">
-    API keys and scoped JWTs.
+  <Card title="NVIDIA OpenShell" icon="shield-halved" href="/integrations/openshell">
+    Run Hermes in a sandbox whose only allowed destination is DeepInfra.
   </Card>
 </CardGroup>
+
+<Note>
+  Tested with Hermes Agent v0.21.5 (2026.9.24).
+</Note>
