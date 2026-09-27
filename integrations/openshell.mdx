@@ -1,0 +1,370 @@
+---
+title: NVIDIA OpenShell
+description: Run agents in an NVIDIA OpenShell sandbox whose only allowed destination is DeepInfra inference.
+icon: shield-halved
+---
+
+[NVIDIA OpenShell](https://docs.nvidia.com/openshell/latest) is an open-source runtime for AI agents. Each agent runs in a sandbox with default-deny networking, a per-binary Layer 7 policy that lists the hosts, methods and paths it may use, and a gateway that keeps API keys outside the sandbox. Every connection is either allowed by a rule you can read or denied and logged.
+
+DeepInfra is a first-party provider profile in the OpenShell repository, [`providers/deepinfra.yaml`](https://github.com/NVIDIA/OpenShell/blob/main/providers/deepinfra.yaml). With it attached, the agent's environment holds only an opaque placeholder in `DEEPINFRA_API_KEY`. The gateway swaps in your real key on requests to `api.deepinfra.com:443` and nowhere else, so the credential never enters the sandbox. The agent keeps the whole [model catalog](https://deepinfra.com/models/text-generation) through the OpenAI-compatible API; the rest of the internet stays closed unless you open it.
+
+## Quick start
+
+You need a Linux host with Docker Engine 28 or later and your user in the `docker` group, OpenShell v0.1.1, and a DeepInfra API key from the [Dashboard](https://deepinfra.com/dash/api_keys). Pin the OpenShell version; commands change between releases.
+
+```bash
+curl -LsSf https://raw.githubusercontent.com/NVIDIA/OpenShell/main/install.sh | OPENSHELL_VERSION=v0.1.1 sh
+sudo loginctl enable-linger $USER   # keep the gateway running after you log out
+export DEEPINFRA_API_KEY="<your DeepInfra API key here>"
+```
+
+A gateway starts with no profiles, so the first step for any provider is to import one. Four commands give you a sandbox that can reach DeepInfra and nothing else. `--from-existing` reads `DEEPINFRA_API_KEY` from your shell into the gateway's credential store; it is never passed into the sandbox.
+
+```bash
+curl -LsSf https://raw.githubusercontent.com/NVIDIA/OpenShell/v0.1.1/providers/deepinfra.yaml -o deepinfra.yaml
+openshell profile import -f deepinfra.yaml
+openshell provider create --name deepinfra --type deepinfra --from-existing
+openshell sandbox create --name di-smoke --from curlimages/curl:8.22.0 --provider deepinfra --detach -- sleep infinity
+```
+
+```text
+Imported 1 provider profile.
+✓ Created provider deepinfra
+Created sandbox: di-smoke
+```
+
+The profile allows one endpoint, `api.deepinfra.com:443`, for two client binaries, `/usr/bin/curl` and `/usr/local/bin/curl`. OpenShell's default image has no `curl`, so the sandbox uses the official [`curlimages/curl`](https://hub.docker.com/r/curlimages/curl) image, and `sleep infinity` keeps it alive for the checks below. Run the profile's own smoke test, the public model catalog with metadata in the curated agent order; `jq` runs on your host:
+
+```bash
+openshell sandbox exec -n di-smoke --no-login-shell -- curl -sS "https://api.deepinfra.com/v1/openai/models?filter=with_meta&sort_by=openshell" | jq -r '.data[:3][].id'
+```
+
+```text
+deepseek-ai/DeepSeek-V4-Flash
+Qwen/Qwen3.5-397B-A17B
+moonshotai/Kimi-K2.6
+```
+
+<Note>
+  `openshell profile lint -f deepinfra.yaml` checks a profile you edited. `openshell provider list-profiles` and the older `openshell provider profile import -f deepinfra.yaml --global` spelling still work in v0.1.1. Import is create-only; to change an imported profile, export it, edit the file and run `openshell profile update deepinfra -f deepinfra.yaml`.
+</Note>
+
+## Verify the boundary
+
+Inside the sandbox, `DEEPINFRA_API_KEY` is a placeholder. A chat completion puts it in the `Authorization` header where the key would go, and the gateway resolves it on the way out because the destination is the one the profile binds the credential to:
+
+```bash
+openshell sandbox exec -n di-smoke --no-login-shell -- sh -c 'echo $DEEPINFRA_API_KEY'
+
+openshell sandbox exec -n di-smoke --no-login-shell -- sh -c '
+  curl -sS https://api.deepinfra.com/v1/openai/chat/completions \
+    -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d @-' <<'EOF' | jq -c '{model, reply: .choices[0].message.content, tokens: .usage.total_tokens}'
+{"model": "deepseek-ai/DeepSeek-V4-Flash", "messages": [{"role": "user", "content": "Say hello in one word."}]}
+EOF
+```
+
+```text
+openshell:resolve:env:v3721373755583287707_DEEPINFRA_API_KEY
+{"model":"deepseek-ai/DeepSeek-V4-Flash","reply":"Hello","tokens":12}
+```
+
+Now the negative test. Nothing in the effective policy names `example.com`, so the sandbox refuses the connection before it leaves, and the log records both decisions with the binary and the reason (trimmed to the policy lines here; `openshell logs di-smoke --tail` streams it live):
+
+```bash
+openshell sandbox exec -n di-smoke --no-login-shell -- curl -sS https://example.com
+openshell logs di-smoke --since 5m --source sandbox
+```
+
+```text
+curl: (7) Failed to connect to example.com:443 after 3 ms: Could not connect to server
+[1790509026.810] [sandbox] [OCSF ] [ocsf] NET:OPEN [INFO] ALLOWED /usr/bin/curl(0) -> api.deepinfra.com:443 [policy:_provider_deepinfra engine:opa]
+[1790509026.944] [sandbox] [OCSF ] [ocsf] HTTP:POST [INFO] ALLOWED POST http://api.deepinfra.com:443/v1/openai/chat/completions [policy:_provider_deepinfra engine:l7]
+[1790509027.341] [sandbox] [OCSF ] [ocsf] NET:REFUSE [MED] DENIED example.com [reason:policy_dns_ineligible]
+[1790509027.343] [sandbox] [OCSF ] [ocsf] NET:OPEN [MED] DENIED /usr/bin/curl(0) -> example.com:443 [reason:transparent_tcp_policy_denied]
+```
+
+OpenShell also drafts a rule proposal from every blocked connection and flushes it to the gateway about ten seconds later. A draft never changes the policy by itself; it waits for you:
+
+```bash
+openshell rule get di-smoke --status pending
+```
+
+```text
+Network Rules:  (version 1, 1 chunk)
+
+  Chunk: 4cc7a5cf-0bb8-4967-8843-19579e60f8f4
+  Status: pending
+  Rule: allow_example_com_443
+  Binary: /usr/bin/curl
+  Confidence: 65%
+  Rationale: Allow curl to connect to example.com:443 (HTTPS).
+  Prover: prover: no new findings
+  Candidate: 961168893ad8
+  Endpoints: example.com:443 [L4]
+  Binaries: /usr/bin/curl
+  Hits: 3 (first seen 2026-09-27 11:37:07, last seen 2026-09-27 11:37:47)
+```
+
+Approve with `openshell rule approve di-smoke --chunk-id <chunk>` only when that access is intended; otherwise `openshell rule reject di-smoke --chunk-id <chunk> --reason "..."`.
+
+## Pin the API surface
+
+OpenShell v0.1.1 has no local inference endpoint and no model router; the managed inference route was removed before 0.1.0. The agent calls DeepInfra's native URL, `https://api.deepinfra.com/v1/openai`, exactly as it would outside the sandbox. What changes is what it holds: a placeholder instead of the key, and a policy that admits only that host.
+
+There is also no per-model allowlist. The profile does not select a model, and L7 rules inspect method, path and query string, not the JSON body where `model` lives. The model is whatever the agent's configuration says. What you can pin at the gateway is the API surface. Export the profile, replace its `access: read-write` preset with explicit rules, and apply the update; running sandboxes reload it within about ten seconds.
+
+```bash
+openshell profile export deepinfra -o yaml > deepinfra.yaml
+```
+
+```yaml
+endpoints:
+  - host: api.deepinfra.com
+    port: 443
+    protocol: rest
+    enforcement: enforce
+    rules:
+      - allow: { method: GET, path: /v1/openai/models }
+      - allow: { method: POST, path: /v1/openai/chat/completions }
+```
+
+```bash
+openshell profile update deepinfra -f deepinfra.yaml
+```
+
+Chat completions still work; any other path on the same host is denied at the request layer, with the rule named in the response:
+
+```bash
+openshell sandbox exec -n di-smoke --no-login-shell -- sh -c '
+  curl -sS https://api.deepinfra.com/v1/openai/embeddings \
+    -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d @-' <<'EOF' | jq -c '{error, policy, rule, detail}'
+{"model": "BAAI/bge-m3", "input": "hello"}
+EOF
+```
+
+```text
+{"error":"policy_denied","policy":"_provider_deepinfra","rule":"POST /v1/openai/embeddings","detail":"POST /v1/openai/embeddings not permitted by policy"}
+```
+
+When the agent needs [embeddings](/apis/embeddings), add `- allow: { method: POST, path: /v1/openai/embeddings }` to the list.
+
+## Write the sandbox policy
+
+A sandbox enforces its effective policy: the base policy you set plus one layer per attached provider. So far the sandbox ran on OpenShell's restrictive default with the provider layer as its only network rule. This complete base policy states the same contract explicitly, `api.deepinfra.com:443` for `curl` and nothing else. The filesystem and landlock sections repeat what OpenShell applied at startup; a live replacement must keep them unchanged.
+
+```yaml deepinfra-only.yaml
+version: 1
+
+filesystem_policy:
+  include_workdir: true
+  read_only: [/bin, /usr, /lib, /proc, /dev/urandom, /etc, /var/log]
+  read_write: [/tmp, /dev/null]
+
+landlock:
+  compatibility: best_effort
+
+network_policies:
+  deepinfra_api:
+    endpoints:
+      - host: api.deepinfra.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        rules:
+          - allow: { method: GET, path: /v1/openai/models }
+          - allow: { method: POST, path: /v1/openai/chat/completions }
+    binaries:
+      - path: /usr/bin/curl
+```
+
+The rule mirrors the narrowed profile. With the stock profile, write `access: read-write` in place of `rules`, but do not mix the two: OpenShell unions overlapping rules, so a `read-write` base rule would reopen the paths the profile closed. Network rules reload live:
+
+```bash
+openshell policy set di-smoke --policy deepinfra-only.yaml --wait
+```
+
+```text
+✓ Policy version 2 submitted (hash: afd3d673119e)
+✓ Policy version 2 loaded (active version: 2)
+```
+
+`openshell policy get di-smoke --full` now lists both `deepinfra_api` and `_provider_deepinfra`; the chat completion still succeeds and `example.com` is still refused.
+
+### Allow one internal endpoint
+
+The common production variant is DeepInfra plus one approved internal service, with the open internet still denied. Add a second rule to the same file and apply it again. The placeholder host `docs.internal.example` stands in for yours; `read-only` admits `GET`, `HEAD` and `OPTIONS` only.
+
+```yaml deepinfra-plus-internal.yaml
+  internal_docs:
+    endpoints:
+      - host: docs.internal.example
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: read-only
+    binaries:
+      - path: /usr/bin/curl
+```
+
+```bash
+openshell policy set di-smoke --policy deepinfra-plus-internal.yaml --wait
+openshell sandbox exec -n di-smoke --no-login-shell -- curl -sS https://api.deepinfra.com/v1/openai/models | jq '.data | length'
+openshell sandbox exec -n di-smoke --no-login-shell -- curl -sS https://docs.internal.example/
+openshell sandbox exec -n di-smoke --no-login-shell -- curl -sS https://example.com
+openshell logs di-smoke --since 2m --source sandbox
+```
+
+```text
+187
+curl: (6) Could not resolve host: docs.internal.example
+curl: (7) Failed to connect to example.com:443 after 3 ms: Could not connect to server
+[1790509066.564] [sandbox] [OCSF ] [ocsf] HTTP:GET [INFO] ALLOWED GET http://api.deepinfra.com:443/v1/openai/models [policy:_provider_deepinfra engine:l7]
+[1790509067.272] [sandbox] [OCSF ] [ocsf] NET:REFUSE [LOW] DENIED docs.internal.example [reason:policy_dns_upstream_nxdomain]
+[1790509067.357] [sandbox] [OCSF ] [ocsf] NET:OPEN [MED] DENIED /usr/bin/curl(0) -> example.com:443 [reason:transparent_tcp_policy_denied]
+```
+
+The three reasons tell the story: DeepInfra is allowed, the internal name is admitted by policy and fails only because the placeholder does not resolve upstream, and `example.com` is refused by policy. An internal name that resolves to a private address works with an exact hostname; a wildcard such as `*.internal.example` also needs `allowed_ips`, see OpenShell's [network rules](https://docs.nvidia.com/openshell/latest/how-it-works/policies/network-rules#restrict-destination-addresses).
+
+## Run Hermes Agent in the sandbox
+
+`curl` proves the boundary; an agent is what you run behind it. [Hermes Agent](/integrations/hermes-agent) has DeepInfra built in, so its configuration is two lines, and the placeholder the sandbox holds in `DEEPINFRA_API_KEY` is exactly what the built-in provider reads. Two image facts need handling. Hermes is Python, so the process that opens connections is the interpreter, `/usr/bin/python3.13` in this image, and it must be in the profile's `binaries`. And OpenShell requires the image's working directory to be writable by the sandbox user and not an image volume, sets `HOME` to that directory, and does not pass the image's environment to processes, so a two-line derivative gives Hermes a home at `/workspace/.hermes`:
+
+```dockerfile Dockerfile
+FROM nousresearch/hermes-agent:v2026.9.24
+RUN mkdir -p /workspace/.hermes && chown -R hermes:hermes /workspace
+USER hermes
+WORKDIR /workspace
+```
+
+```bash
+docker build -t hermes-openshell:local .
+```
+
+Add the interpreter to `binaries` in your exported profile and apply it:
+
+```yaml
+binaries:
+  - /usr/bin/curl
+  - /usr/local/bin/curl
+  - /usr/bin/python3.13
+```
+
+```bash
+openshell profile update deepinfra -f deepinfra.yaml
+```
+
+The policy adds Hermes's install tree read-only; `include_workdir` makes `/workspace` writable.
+
+```yaml hermes-policy.yaml
+version: 1
+
+filesystem_policy:
+  include_workdir: true
+  read_only: [/bin, /usr, /lib, /proc, /dev/urandom, /etc, /var/log, /opt/hermes]
+  read_write: [/tmp, /dev/null]
+
+landlock:
+  compatibility: best_effort
+```
+
+```yaml config.yaml
+model:
+  default: deepseek-ai/DeepSeek-V4-Flash
+  provider: deepinfra
+```
+
+Create the sandbox, upload the configuration into Hermes's home, and ask a one-shot question:
+
+```bash
+openshell sandbox create --name hermes --from hermes-openshell:local --provider deepinfra --policy hermes-policy.yaml --detach -- sleep infinity
+openshell sandbox upload hermes ./config.yaml .hermes/config.yaml
+openshell sandbox exec -n hermes --no-login-shell -- hermes chat -Q -q "In one sentence, which model are you and who serves it?"
+openshell logs hermes --since 2m --source sandbox
+```
+
+```text
+  ⚠ tirith security scanner enabled but not available — command scanning will use pattern matching only
+
+session_id: 20260927_120545_c0cb65
+I'm DeepSeek-V4-Flash, served by DeepInfra.
+[1790510745.387] [sandbox] [OCSF ] [ocsf] NET:OPEN [MED] DENIED /usr/bin/python3.13(0) -> models.dev:443 [reason:transparent_tcp_policy_denied]
+[1790510748.091] [sandbox] [OCSF ] [ocsf] NET:OPEN [MED] DENIED /usr/bin/python3.13(0) -> github.com:443 [reason:transparent_tcp_policy_denied]
+[1790510750.746] [sandbox] [OCSF ] [ocsf] NET:OPEN [MED] DENIED /usr/local/bin/uv(0) -> pypi.org:443 [reason:transparent_tcp_policy_denied]
+[1790510761.163] [sandbox] [OCSF ] [ocsf] NET:OPEN [INFO] ALLOWED /usr/bin/python3.13(0) -> api.deepinfra.com:443 [policy:_provider_deepinfra engine:opa]
+[1790510763.770] [sandbox] [OCSF ] [ocsf] HTTP:POST [INFO] ALLOWED POST http://api.deepinfra.com:443/v1/openai/chat/completions [policy:_provider_deepinfra engine:l7]
+```
+
+The log is the point: Hermes reached DeepInfra through the provider rule, and everything else it tried on startup, model metadata from `models.dev`, GitHub, and its optional `tirith` command scanner from PyPI, was denied and recorded. For an interactive session, replace `sleep infinity` with `hermes` and drop `--detach`.
+
+<Note>
+  The same pattern works for [Pi](/integrations/pi): build the image from OpenShell's [Run Pi with OpenRouter](https://docs.nvidia.com/openshell/latest/tutorials/run-pi-with-openrouter) tutorial, list `/usr/local/bin/node` in `binaries`, and use the provider block from our Pi page.
+
+  [NemoClaw](https://docs.nvidia.com/nemoclaw/latest), NVIDIA's OpenClaw, Hermes and Deep Agents stack on OpenShell, routes inference through its own managed provider and rejects a direct `deepinfra` provider in `openclaw.json`. Choose the provider during NemoClaw onboarding, as described in its [provider guide](https://docs.nvidia.com/nemoclaw/latest/inference/choose-inference-provider), instead of importing this profile there.
+</Note>
+
+## What you configure and what DeepInfra provides
+
+| You configure | DeepInfra provides |
+| --- | --- |
+| The OpenShell host and gateway (Docker driver in this guide) | The maintained `deepinfra` provider profile in the OpenShell repository |
+| A provider holding your `DEEPINFRA_API_KEY` in the gateway's credential store | OpenAI-compatible chat completions and embeddings on `api.deepinfra.com` |
+| The sandbox policy: which binaries reach which hosts, methods and paths | The [model catalog](https://deepinfra.com/models) with context lengths and pricing |
+| The model in the agent's configuration | API keys, usage metering and billing |
+
+## Choosing a model
+
+Any [chat model](https://deepinfra.com/models/text-generation) works through the gateway; the request is an ordinary chat completion. The models below were each run through the sandbox for this guide. Context lengths come from the [catalog](https://api.deepinfra.com/v1/openai/models?filter=with_meta&sort_by=openshell), which is public and also carries current pricing.
+
+| Model | Context | Good for |
+| --- | --- | --- |
+| `deepseek-ai/DeepSeek-V4-Flash` | 1M | Long-context agent loops at very low cost |
+| `Qwen/Qwen3.5-27B` | 262K | Fast, inexpensive default with vision and reasoning |
+| `zai-org/GLM-5.3` | 1M | Strong reasoning on complex multi-step tasks |
+| `moonshotai/Kimi-K2.6` | 262K | Agentic tool use and coding |
+| `meta-llama/Llama-4-Scout-17B-16E-Instruct` | 327K | Llama ecosystem, vision, wide language coverage |
+| `google/gemma-4-31B-it-turbo` | 262K | Cheap, capable generalist |
+
+<Note>
+  To compare other models, list the catalog with context windows and pricing via [`/v1/openai/models?filter=with_meta&sort_by=openshell`](https://api.deepinfra.com/v1/openai/models?filter=with_meta&sort_by=openshell). Each entry's `metadata` block has `context_length`, `max_tokens` and per-million-token `pricing`; the `id` is what you pass as `model`. Reasoning models spend output tokens on thinking, so give them a `max_tokens` well above the visible answer.
+
+  ```bash
+  curl -s "https://api.deepinfra.com/v1/openai/models?filter=with_meta&sort_by=openshell" \
+    | jq '.data[] | select(.metadata.tags | index("chat")) | {id, context_length: .metadata.context_length, pricing: .metadata.pricing}'
+  ```
+</Note>
+
+## Troubleshooting
+
+- **`profile import` fails with "already exists".** Import is create-only. Export, edit and `openshell profile update deepinfra -f deepinfra.yaml`, keeping `resource_version`, or `openshell profile delete deepinfra` and import again. `profile lint` on an exported file reports the same error; `update` validates on its own.
+- **`provider create --from-existing` finds no credential.** `DEEPINFRA_API_KEY` is not exported in the shell running the CLI.
+- **DeepInfra is denied like any other host.** The provider is not attached: `openshell sandbox provider list <sandbox>` is empty. Attach it with `openshell sandbox provider attach <sandbox> deepinfra --wait`, then start a new process; a running one keeps the environment it started with.
+- **DeepInfra returns `401`.** The placeholder reached DeepInfra unresolved. The calling binary is not in the profile's `binaries` (the sandbox log names the real path OpenShell saw, for example a Python interpreter), or the log shows `credential_endpoint_mismatch`, meaning a base-policy rule admitted a host the profile does not bind the credential to. Fix the profile, not the network rule.
+- **`404` on a path like `/v1/openai/v1/chat/completions`.** The client appended `/v1` to the base URL. Set it to exactly `https://api.deepinfra.com/v1/openai`; nothing in OpenShell rewrites it.
+- **Hermes says "Model '' isn't available on DeepInfra".** It did not find `config.yaml`. OpenShell sets `HOME` to the working directory and ignores the image's `HERMES_HOME`, so the file belongs at `<workdir>/.hermes/config.yaml`.
+- **`policy set` is rejected with "landlock policy cannot be changed on a live sandbox".** The file changed a startup section. Start from `openshell policy get <sandbox> --base` and change only `network_policies`.
+- **`sandbox create` fails with "not writable by the sandbox identity" or "image-declared volume masks OCI WorkingDir".** The image's `WORKDIR` must be a plain directory writable by its user. Derive an image that sets one, as in the Hermes section.
+
+## Learn more
+
+<CardGroup cols={2}>
+  <Card title="OpenShell documentation" icon="book" href="https://docs.nvidia.com/openshell/latest">
+    Installation, providers, policies and the policy schema reference.
+  </Card>
+  <Card title="DeepInfra provider profile" icon="code-pull-request" href="https://github.com/NVIDIA/OpenShell/pull/1902">
+    The pull request that added `providers/deepinfra.yaml` to OpenShell.
+  </Card>
+  <Card title="NemoClaw inference providers" icon="plug" href="https://docs.nvidia.com/nemoclaw/latest/inference/choose-inference-provider">
+    Choosing an inference provider in NVIDIA's NemoClaw stack.
+  </Card>
+  <Card title="Sandboxes" icon="box" href="/sandboxes/overview">
+    DeepInfra's own isolated microVMs for running agent-written code.
+  </Card>
+</CardGroup>
+
+<Note>
+  Tested on 2026-09-27 with OpenShell v0.1.1 (Docker driver, Docker Engine 29.8.1, Ubuntu 24.04 x86_64), `curlimages/curl:8.22.0` and `nousresearch/hermes-agent:v2026.9.24` (Hermes v0.21.5). OpenShell's CLI and policy schema are still moving; re-check this page when you upgrade.
+</Note>
