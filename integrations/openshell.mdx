@@ -301,9 +301,9 @@ I'm DeepSeek-V4-Flash, served by DeepInfra.
 The log is the point: Hermes reached DeepInfra through the provider rule, and everything else it tried on startup, model metadata from `models.dev`, GitHub, and its optional `tirith` command scanner from PyPI, was denied and recorded. For an interactive session, replace `sleep infinity` with `hermes` and drop `--detach`.
 
 <Note>
-  The same pattern works for [Pi](/integrations/pi): build the image from OpenShell's [Run Pi with OpenRouter](https://docs.nvidia.com/openshell/latest/tutorials/run-pi-with-openrouter) tutorial, list `/usr/local/bin/node` in `binaries`, and use the provider block from our Pi page.
+  The same pattern works for [Pi](/integrations/pi): build the image from OpenShell's [Run Pi with OpenRouter](https://docs.nvidia.com/openshell/v0.1.1/tutorials/run-pi-with-openrouter) tutorial, list `/usr/local/bin/node` in `binaries`, and use the provider block from our Pi page.
 
-  [NemoClaw](https://docs.nvidia.com/nemoclaw/latest), NVIDIA's OpenClaw, Hermes and Deep Agents stack on OpenShell, routes inference through its own managed provider and rejects a direct `deepinfra` provider in `openclaw.json`. Choose the provider during NemoClaw onboarding, as described in its [provider guide](https://docs.nvidia.com/nemoclaw/latest/inference/choose-inference-provider), instead of importing this profile there.
+  [NemoClaw](https://docs.nvidia.com/nemoclaw/latest), NVIDIA's OpenClaw, Hermes and Deep Agents stack on OpenShell, routes inference through its own managed provider and rejects a direct `deepinfra` provider in `openclaw.json`. Choose the provider during NemoClaw onboarding, as described in its [provider guide](https://docs.nvidia.com/nemoclaw/user-guide/openclaw/inference/learn-and-choose/choose-inference-provider), instead of importing this profile there.
 </Note>
 
 ## What you configure and what DeepInfra provides
@@ -357,7 +357,7 @@ Any [chat model](https://deepinfra.com/models/text-generation) works through the
   <Card title="DeepInfra provider profile" icon="code-pull-request" href="https://github.com/NVIDIA/OpenShell/pull/1902">
     The pull request that added `providers/deepinfra.yaml` to OpenShell.
   </Card>
-  <Card title="NemoClaw inference providers" icon="plug" href="https://docs.nvidia.com/nemoclaw/latest/inference/choose-inference-provider">
+  <Card title="NemoClaw inference providers" icon="plug" href="https://docs.nvidia.com/nemoclaw/user-guide/openclaw/inference/learn-and-choose/choose-inference-provider">
     Choosing an inference provider in NVIDIA's NemoClaw stack.
   </Card>
   <Card title="Sandboxes" icon="box" href="/sandboxes/overview">

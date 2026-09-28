@@ -116,16 +116,16 @@
           {
             "group": "Integrations",
             "pages": [
+              "integrations/openshell",
               "integrations/anthropic",
               "integrations/langchain",
               "integrations/llama-index",
               "integrations/ai-sdk",
-              "integrations/autogen",
               "integrations/crewai",
               "integrations/microsoft-agent-framework",
               "integrations/pi",
               "integrations/hermes-agent",
-              "integrations/openshell"
+              "integrations/autogen"
             ]
           },
           {
