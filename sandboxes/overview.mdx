@@ -8,7 +8,7 @@ Sandboxes give you an isolated Linux microVM on demand, ready to run code the mo
 
 Sandboxes are ephemeral by design: they're short-lived, and data inside them is not backed up or guaranteed to persist while they run. Treat a sandbox as scratch space — write anything you want to keep to external storage before it shuts down.
 
-Manage sandboxes at [Dashboard → Sandboxes](https://deepinfra.com/dash/sandboxes), or drive them entirely from the [Python SDK](#python-sdk) or [HTTP API](#http-api).
+Manage sandboxes at [Dashboard → Sandboxes](https://deepinfra.com/dash/sandboxes), or drive them entirely from the [Python SDK](#python-sdk), [TypeScript SDK](#typescript-sdk), or [HTTP API](#http-api).
 
 <Note>
   This page focuses on the details that aren't obvious from the API surface alone — what actually survives a restart, how long a sandbox lives, and where the sharp edges are. If you only read one section, read [Filesystem and persistence](#filesystem-and-persistence).
@@ -44,7 +44,7 @@ Sandboxes come in multiple plan sizes, from a quick script to a heavier data-pro
 For current plan specs (vCPU, RAM, disk) and hourly pricing, don't hardcode numbers — check the live catalog:
 
 - Dashboard: [deepinfra.com/dash/sandboxes#catalog](https://deepinfra.com/dash/sandboxes#catalog)
-- API: `GET /v1/sandboxes/catalog` (see [HTTP API](#http-api)), or `Sandbox.catalog()` in the Python SDK
+- API: `GET /v1/sandboxes/catalog` (see [HTTP API](#http-api)), or `Sandbox.catalog()` in the [Python](#python-sdk) or [TypeScript](#typescript-sdk) SDK
 
 Billing is per-second with no minimum, and only runs while a sandbox is `creating`, `starting`, `running`, or `stopping` — a `stopped` sandbox costs nothing. Because the meter starts while the microVM is still booting and keeps running for the few seconds it takes to save your disk on `stop()`, per-call cost is "wall clock the sandbox occupied capacity," not strictly "wall clock you could run commands."
 
@@ -132,7 +132,7 @@ Tags are set once at creation — there's no endpoint to update them afterward.
 | Shared fleet capacity exhausted, or creation temporarily disabled | `503` | `CapacityError` |
 | Internal error | `5xx` | `InternalServerError` |
 
-The Python SDK adds a few client-side exceptions for conditions that aren't a single HTTP response: `SandboxTimeoutError` (waiting for a state transition took too long), `SandboxFailedError` (the sandbox went to `failed` while you were waiting on it), `SandboxExecError` (the exec stream ended without a return code), and `CommandFailedError` (raised by `.check()` on a non-zero exit).
+The Python and TypeScript SDKs each add a few client-side exceptions (same names in both) for conditions that aren't a single HTTP response: `SandboxTimeoutError` (waiting for a state transition took too long), `SandboxFailedError` (the sandbox went to `failed` while you were waiting on it), `SandboxExecError` (the exec stream ended without a return code), and `CommandFailedError` (raised by `.check()` on a non-zero exit).
 
 ## Python SDK
 
@@ -178,6 +178,64 @@ sb.exec("python3", "/workspace/script.py", timeout="30m")
 ```
 
 **Coming soon:** `exec_stream()` for live command output, `snapshot()` / `Sandbox.from_snapshot()` for point-in-time snapshots you control, `expose_port()`, and `fs.upload_dir()`.
+
+## TypeScript SDK
+
+```bash
+npm install deepinfra
+```
+
+Set `DEEPINFRA_API_KEY` (the same key you use for inference, from [deepinfra.com/dash/api_keys](https://deepinfra.com/dash/api_keys)) and you're executing code in an isolated microVM in a few lines:
+
+```typescript
+import { Sandbox } from "deepinfra";
+
+const sb = await Sandbox.create({ plan: "medium", timeout: "10m" }); // resolves once running
+
+const r = await sb.exec("bash", "-c", "pip install --break-system-packages pandas && python3 -c 'import pandas; print(pandas.__version__)'");
+console.log(r.stdout, r.stderr, r.returncode);
+
+const out = await sb.runPython("print(21 * 2)");
+out.check();   // throws CommandFailedError on a non-zero exit code
+
+await sb.fs.write("/workspace/in.csv", "a,b\n1,2\n");
+const data = await sb.fs.read("/workspace/in.csv");   // Buffer
+
+await sb.stop();        // frees compute, keeps /workspace
+await sb.start();       // resumes with /workspace intact, everything else reset
+await sb.terminate();   // deletes the sandbox, including /workspace
+```
+
+A few things worth knowing beyond the basic example:
+
+- `timeout` accepts plain seconds (`600`) or a duration string (`"90s"`, `"10m"`, `"2h"`, `"1h30m"`), same as Python.
+- `Sandbox.create()` resolves once the sandbox is `running` by default. Pass `wait: false` to get it back immediately in whatever state it's in, or `waitTimeout` (seconds) to change how long it waits.
+- `Sandbox.fromId("sb-...")` reattaches to a sandbox by ID from anywhere in your code — same idea as the Python SDK's `from_id()`.
+- Every method already returns a `Promise` — there's no separate async client or `a`-prefixed twin like Python's `acreate`/`aexec`. `Promise.all()` over several `Sandbox.create()` calls is the equivalent of orchestrating many sandboxes at once.
+- Clean up with `try`/`finally` — or `await using`, since `Sandbox` implements `Symbol.asyncDispose` and auto-terminates at the end of the block:
+
+```typescript
+const sb = await Sandbox.create({ plan: "small" });
+try {
+  await sb.runPython("open('/workspace/out.txt', 'w').write('hi')");
+  console.log((await sb.fs.read("/workspace/out.txt")).toString());   // fs.read() returns a Buffer, not a string
+} finally {
+  await sb.terminate();
+}
+```
+
+- For large scripts, write the file and run it rather than passing code inline:
+
+```typescript
+import fs from "node:fs";
+
+await sb.fs.write("/workspace/script.py", await fs.promises.readFile("script.py", "utf8"));
+await sb.exec("python3", "/workspace/script.py", { timeout: "30m" });
+```
+
+Errors follow the same table as above, with identical exception names (`AuthenticationError`, `NotFoundError`, `ConflictError`, `RateLimitError`/`TooManySandboxesError`, `CapacityError`, and the SDK-side `SandboxTimeoutError` / `SandboxFailedError` / `CommandFailedError`). If `Sandbox.create()` fails while waiting for the sandbox to come up, the thrown error carries `.sandboxId` so you can inspect or terminate the sandbox it already created.
+
+See [`examples/sandbox-quickstart.ts`](https://github.com/deepinfra/deepinfra-node/blob/main/examples/sandbox-quickstart.ts) in the SDK repo for a runnable end-to-end example.
 
 ## HTTP API
 
