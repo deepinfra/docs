@@ -116,12 +116,29 @@ The `kid` field is `{user_id}:{base64(api_key_name)}` joined with colons. Only `
 
 ### Signature
 
+Sign with the API key's **signing key**, not the API key itself:
+
+```bash
+curl "https://api.deepinfra.com/v1/api-tokens/id/$TOKEN_ID/signing-key" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY"
+```
+
+```json
+{"signing_key": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"}
+```
+
+`TOKEN_ID` is the `token_id` of the API key you are signing with, from `GET /v1/api-tokens`.
+
 ```
 HMAC_SHA256(
-  api_key,
+  signing_key,
   base64urlEncoding(header) + '.' + base64urlEncoding(payload)
 )
 ```
+
+<Warning>
+JWTs signed with the API key itself stop being accepted on **November 5, 2026**. If you sign your own JWTs, fetch the signing key above and re-issue any JWT you are still using. JWTs created through [`POST /v1/scoped-jwt`](#create-a-scoped-jwt) are unaffected.
+</Warning>
 
 ### Token format
 
