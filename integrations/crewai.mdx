@@ -216,7 +216,7 @@ class DeepInfraSandboxPython(BaseTool):
         return f"exit={result.returncode}\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
 ```
 
-Add `DeepInfraSandboxPython()` to an agent's `tools` list like any other tool. A nano sandbox is running within about half a second of the create call, and the context manager terminates it when the call returns, so you pay only for the seconds the code runs. Files the agent needs to keep between calls belong in `/workspace`; to carry state across calls, create one `Sandbox` in the tool's constructor and reuse it instead of the context manager. Note the account limit of five active sandboxes when many agents run in parallel.
+Add `DeepInfraSandboxPython()` to an agent's `tools` list like any other tool. A nano sandbox is running within about half a second of the create call, and the context manager terminates it when the call returns, so you pay only for the seconds the code runs. Files the agent needs to keep between calls belong in `/workspace`; to carry state across calls, create one `Sandbox` in the tool's constructor and reuse it instead of the context manager. Note the account limit of 25 active sandboxes when many agents run in parallel.
 
 ## Choosing a model
 

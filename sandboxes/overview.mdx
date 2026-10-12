@@ -97,7 +97,7 @@ Every sandbox boots as its own microVM — via Kata Containers running on QEMU/K
 
 ## Limits and quotas
 
-- **Active sandboxes** — up to **5 non-stopped sandboxes per account** at a time. `creating`, `starting`, `running`, and `stopping` all count against this; `stopped` doesn't. Going over it returns a `429` (`RateLimitError`, aliased as `TooManySandboxesError` in the SDK) instead of a silent failure.
+- **Active sandboxes** — up to **25 non-stopped sandboxes per account** at a time. `creating`, `starting`, `running`, and `stopping` all count against this; `stopped` doesn't. Going over it returns a `429` (`RateLimitError`, aliased as `TooManySandboxesError` in the SDK) instead of a silent failure.
 - **Fleet capacity** — sandboxes run on a shared fleet, so a capacity crunch across all customers can occasionally return a `503` (`CapacityError`) on creation even when you're well under your own limit. Retry with backoff.
 - **File transfers** — both `fs.write()` and `fs.read()` are capped at 100 MiB per call (see above).
 - **Disk** — scales with plan (see the [catalog](#plans-and-pricing) for exact numbers); the container's own disk outside `/workspace` is only a couple GB regardless of plan.
@@ -128,7 +128,7 @@ Tags are set once at creation — there's no endpoint to update them afterward.
 | Sandbox not found (or not yours) | `404` | `NotFoundError` |
 | Wrong state for this operation | `409` | `ConflictError` |
 | File transfer body over 100 MiB (either direction) | `413` | `ContentTooLargeError` |
-| Over the 5-active-sandboxes cap | `429` | `RateLimitError` / `TooManySandboxesError` |
+| Over the 25-active-sandboxes cap | `429` | `RateLimitError` / `TooManySandboxesError` |
 | Shared fleet capacity exhausted, or creation temporarily disabled | `503` | `CapacityError` |
 | Internal error | `5xx` | `InternalServerError` |
 
