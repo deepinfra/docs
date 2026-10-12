@@ -52,6 +52,22 @@ Hermes keeps its configuration in `~/.hermes/`:
 
 You can point Hermes at any [model from our catalog](https://deepinfra.com/models/text-generation) — for example `deepseek-ai/DeepSeek-V4-Flash` — either by editing `config.yaml` or interactively with `hermes model`. The agent's model calls are billed as regular inference usage against your account.
 
+## Updating
+
+You update Hermes yourself, whenever you want — DeepInfra doesn't update it for you. New versions are listed on the [Hermes releases page](https://github.com/NousResearch/hermes-agent/releases).
+
+Click **Update** on the instance to get the exact commands, with copy buttons. Connect over SSH, then run:
+
+```bash
+git -C /opt/hermes/src remote set-branches origin main && hermes update
+```
+
+The `git` part makes the install track upstream's `main` branch, which is what `hermes update` pulls. The update takes a few minutes and keeps your settings and chat history. Since it brings in the latest upstream code, consider [creating a backup](/agents/introduction#backups) first so you can roll back.
+
+<Note>
+  The version shown in the dashboard is the one DeepInfra installed, and it doesn't change when you update Hermes yourself. Run `hermes --version` on the instance to see what you're running.
+</Note>
+
 ## FAQ
 
 **Why is there no dashboard link for my instance?**
