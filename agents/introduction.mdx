@@ -132,6 +132,8 @@ curl -X POST https://api.deepinfra.com/v1/agents/{instance_id}/update \
   -H "Authorization: Bearer $DEEPINFRA_API_KEY"
 ```
 
+`/update` applies to OpenClaw. Hermes-Agent instances are [updated over SSH](/agents/hermes-agent#updating) instead, so for them `/update` returns `409` with the command to run.
+
 Delete:
 
 ```bash
