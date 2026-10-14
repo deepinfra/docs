@@ -8,6 +8,22 @@ icon: shield-halved
 
 DeepInfra is a first-party provider profile in the OpenShell repository, [`providers/deepinfra.yaml`](https://github.com/NVIDIA/OpenShell/blob/main/providers/deepinfra.yaml). With it attached, the agent's environment holds only an opaque placeholder in `DEEPINFRA_API_KEY`. The gateway swaps in your real key on requests to `api.deepinfra.com:443` and nowhere else, so the credential never enters the sandbox. The agent keeps the whole [model catalog](https://deepinfra.com/models/text-generation) through the OpenAI-compatible API; the rest of the internet stays closed unless you open it.
 
+## Watch the walkthrough
+
+The recording below runs this guide end to end in under seven minutes: import the provider profile, start a sandbox, show that the key never enters it, pin the API surface, apply a base policy with one internal endpoint, and run Hermes Agent behind the same boundary. The sections that follow repeat every command with its output, so you can pause the video and copy from the page.
+
+<Frame caption="OpenShell v0.1.1 with the Docker driver, from profile import to Hermes Agent answering through the gateway.">
+  <video
+    controls
+    playsInline
+    preload="metadata"
+    className="w-full aspect-[1766/1130] rounded-xl"
+    src="/videos/openshell-deepinfra-walkthrough.mp4"
+  >
+    Your browser cannot play embedded video. <a href="/videos/openshell-deepinfra-walkthrough.mp4">Download the walkthrough</a> instead.
+  </video>
+</Frame>
+
 ## Quick start
 
 You need a Linux host with Docker Engine 28 or later and your user in the `docker` group, OpenShell v0.1.1, and a DeepInfra API key from the [Dashboard](https://deepinfra.com/dash/api_keys). Pin the OpenShell version; commands change between releases.
