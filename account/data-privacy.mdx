@@ -45,6 +45,8 @@ We do not share data you submit to our APIs with any third party, except when us
 
 We do not log the content of your requests. We log only metadata useful for debugging: request ID, cost, sampling parameters.
 
+We also record which client application sent a request (for example a coding agent or an SDK), derived from request headers and from matching well-known client signatures in the request. This is kept only as aggregate counts, never together with request content.
+
 When using the Google model, Google logs prompts and responses for a limited period solely to detect violations of their [Prohibited Use Policy](https://policies.google.com/terms/generative-ai/use-policy).
 
 ## Personal information
