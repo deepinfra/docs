@@ -125,7 +125,8 @@
               "integrations/microsoft-agent-framework",
               "integrations/pi",
               "integrations/hermes-agent",
-              "integrations/autogen"
+              "integrations/autogen",
+              "integrations/clef"
             ]
           },
           {
