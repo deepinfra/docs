@@ -116,6 +116,7 @@
           {
             "group": "Integrations",
             "pages": [
+              "integrations/clef",
               "integrations/openshell",
               "integrations/anthropic",
               "integrations/langchain",

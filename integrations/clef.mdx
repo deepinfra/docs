@@ -1,0 +1,201 @@
+---
+title: Clef (decision models)
+description: Send a state and a set of typed questions to a decision model and get a probability for every allowed option, instead of generated text.
+icon: scale-balanced
+---
+
+[Clef](https://deepinfra.com/Cloudflare/clef) is a decision model. You give it a **state** and a set of **typed questions**, and it scores every allowed option of every question in a single pass. It returns probabilities, not prose.
+
+There is no text to parse and no output that can drift from the schema you sent. The distribution is the answer: you get every option with its probability, not just the winner, so you can threshold on confidence instead of guessing whether a generated label is trustworthy.
+
+## The endpoint
+
+Decision models are not served on `/v1/openai/chat/completions`. Send them to `/v1/decisions`:
+
+```
+POST https://api.deepinfra.com/v1/decisions
+```
+
+Two other paths accept the same body and return the same reply:
+
+| Path | Use it when |
+|---|---|
+| `/v1/decisions` | You are calling DeepInfra directly. |
+| `/v1/systemone` | You are porting code that already targets a System One server. |
+| `/typesafe/v1/systemone` | You use a [TypeSafe](https://docs.typesafe.ai/api) or Jev SDK — point its base URL at DeepInfra. |
+
+## Quickstart
+
+```bash {2-3}
+curl https://api.deepinfra.com/v1/decisions \
+  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Cloudflare/clef",
+    "state": "Help! My payouts have been failing for 3 days.",
+    "questions": {
+      "urgent": {
+        "type": "noul",
+        "instructions": "Does this convey urgency?"
+      },
+      "team": {
+        "type": "choice",
+        "instructions": "Which team should handle this?",
+        "criteria": {
+          "billing": "Payments and payouts",
+          "technical": "Bugs and outages",
+          "sales": "Pricing and plans"
+        }
+      }
+    }
+  }'
+```
+
+The reply mirrors the question keys you chose:
+
+```json
+{
+  "model": "Cloudflare/clef",
+  "answers": {
+    "urgent": { "type": "noul", "noul": 0.93 },
+    "team": {
+      "type": "choice",
+      "choice": "billing",
+      "probabilities": { "billing": 0.81, "technical": 0.15, "sales": 0.04 },
+      "confidence": 0.81
+    }
+  },
+  "usage": { "input_tokens": 214, "output_tokens": 0 }
+}
+```
+
+## Question types
+
+Every question is one of three shapes. The shape decides the reply.
+
+| Type | Asks | Reply |
+|---|---|---|
+| `noul` | A yes/no question | `noul` — a single probability |
+| `choice` | Pick one label from `criteria` | `choice` — the winner, plus `probabilities` and `confidence` |
+| `score` | Rate on an ordered scale | `score` — the expected level, plus `legend`, `probabilities` and `confidence` |
+
+`choice` needs at least two options. `score` needs at least two levels, and the score it returns is the probability-weighted average of the level indices, so `1.72` on a three-level scale means the model leans strongly toward the last level.
+
+<Note>
+`noul` stands for "noul of the above" — it is the boolean case. Every answer also carries the full `probabilities` map, so you never have to re-ask for the runner-up.
+</Note>
+
+## State
+
+`state` does not have to be a string. Pass any JSON object and Clef reads it as structured input:
+
+```json
+{
+  "model": "Cloudflare/clef",
+  "state": {
+    "invoice": {
+      "vendor": "Acme",
+      "total": 1250.0,
+      "currency": "USD",
+      "status": "overdue"
+    }
+  },
+  "questions": {
+    "large": { "type": "noul", "instructions": "Is the total above 1000 USD?" }
+  }
+}
+```
+
+Passing the record as JSON rather than as prose helps: the model sees the same field boundaries your code does, and questions about a specific field ("is `total` above the approval threshold") become unambiguous.
+
+## Images
+
+When the answer depends on something Clef has to look at rather than read, attach images. Up to 4 per request, each an http(s) URL or a `data:` URI:
+
+```json
+{
+  "model": "Cloudflare/clef",
+  "state": "Which invoice is overdue?",
+  "images": ["data:image/png;base64,iVBORw0KGgo..."],
+  "questions": {
+    "overdue": { "type": "noul", "instructions": "Is any invoice past due?" }
+  }
+}
+```
+
+Clef reads the images before the state, so a question can refer to both. This is how document review, screenshot triage and scanned-form classification work without a separate OCR step.
+
+## Python
+
+The request is plain JSON over HTTP, so anything that posts JSON works:
+
+```python
+import requests
+
+def decide(state, questions, model="Cloudflare/clef"):
+    r = requests.post(
+        "https://api.deepinfra.com/v1/decisions",
+        headers={"Authorization": "Bearer YOUR_DEEPINFRA_TOKEN"},
+        json={"model": model, "state": state, "questions": questions},
+        timeout=60,
+    )
+    r.raise_for_status()
+    return r.json()["answers"]
+
+answers = decide(
+    state={"ticket": "Payouts failing for 3 days", "account_age_days": 812},
+    questions={
+        "urgent": {"type": "noul", "instructions": "Does this convey urgency?"},
+        "team": {
+            "type": "choice",
+            "instructions": "Which team should handle this?",
+            "criteria": {"billing": "Payments", "technical": "Bugs"},
+        },
+    },
+)
+
+if answers["urgent"]["noul"] > 0.8 and answers["team"]["confidence"] > 0.7:
+    route(answers["team"]["choice"])
+else:
+    escalate_to_human()
+```
+
+## Acting on confidence
+
+The distribution is the point, so use it. The usual production pattern is to act automatically above a confidence threshold and route everything else to a human or a stronger model:
+
+```python
+def route_or_escalate(answer, auto_threshold=0.85, margin=0.15):
+    top = answer["probabilities"][answer["choice"]]
+    runner_up = max(p for k, p in answer["probabilities"].items() if k != answer["choice"])
+    if top >= auto_threshold and top - runner_up >= margin:
+        return ("auto", answer["choice"])
+    return ("review", answer)
+```
+
+The margin matters as much as the threshold. A 0.5/0.45 split never looks confident under a healthy margin, but it would pass a bare 0.4 threshold while being effectively a coin flip.
+
+## One request, many questions
+
+Every question is scored against the same state, and DeepInfra caches that prefix across the questions of a single call. Asking ten questions in one request costs roughly what asking one costs, so prefer one request with many questions over many requests with one question each.
+
+## Pricing
+
+Clef bills on input tokens at **$0.24 per 1M tokens**. Output is free — there is no generated text, so there is nothing to charge for.
+
+## What Clef is not for
+
+Clef does not generate text. If you need prose — a summary, a reply draft, a rationale — use a chat model. A common and effective pairing is to let Clef make the decision and let a chat model explain it, rather than asking a chat model to do both and hoping the decision is well-formed.
+
+Clef also does not explain itself. It gives you the distribution, not a reason. Building an audit trail on top of `probabilities` is straightforward; building one on top of a generated explanation invites confabulation.
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Clef on the model page" icon="arrow-up-right-from-square" href="https://deepinfra.com/Cloudflare/clef">
+    Try a request in the browser without writing code.
+  </Card>
+  <Card title="Clef-Flash" icon="bolt" href="https://huggingface.co/Cloudflare/clef-flash">
+    The smaller, faster variant of the same model.
+  </Card>
+</CardGroup>
