@@ -22,30 +22,35 @@ Two other paths accept the same body and return the same reply:
 |---|---|
 | `/v1/decisions` | You are calling DeepInfra directly. |
 | `/v1/systemone` | You are porting code that already targets a System One server. |
-| `/typesafe/v1/systemone` | You use a [TypeSafe](https://docs.typesafe.ai/api) or Jev SDK — point its base URL at DeepInfra. |
+| `/typesafe/v1/systemone` | You use a [TypeSafe](https://docs.typesafe.ai/api) or Jev SDK — set its base URL to `https://api.deepinfra.com/typesafe`. |
 
 ## Quickstart
 
-```bash {2-3}
+```bash
 curl https://api.deepinfra.com/v1/decisions \
-  -H "Authorization: Bearer $DEEPINFRA_TOKEN" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "Cloudflare/clef",
     "state": "Help! My payouts have been failing for 3 days.",
     "questions": {
-      "urgent": {
+      "is_urgent": {
         "type": "noul",
         "instructions": "Does this convey urgency?"
       },
-      "team": {
+      "department": {
         "type": "choice",
         "instructions": "Which team should handle this?",
         "criteria": {
-          "billing": "Payments and payouts",
-          "technical": "Bugs and outages",
-          "sales": "Pricing and plans"
+          "billing": "Payments",
+          "technical": "Bugs",
+          "sales": "Pricing"
         }
+      },
+      "frustration": {
+        "type": "score",
+        "instructions": "How frustrated is the customer?",
+        "criteria": ["Calm", "Frustrated", "Very angry"]
       }
     }
   }'
@@ -57,15 +62,22 @@ The reply mirrors the question keys you chose:
 {
   "model": "Cloudflare/clef",
   "answers": {
-    "urgent": { "type": "noul", "noul": 0.93 },
-    "team": {
+    "is_urgent": { "type": "noul", "noul": 0.93 },
+    "department": {
       "type": "choice",
       "choice": "billing",
-      "probabilities": { "billing": 0.81, "technical": 0.15, "sales": 0.04 },
-      "confidence": 0.81
+      "probabilities": { "billing": 0.88, "technical": 0.1, "sales": 0.02 },
+      "confidence": 0.88
+    },
+    "frustration": {
+      "type": "score",
+      "score": 1.67,
+      "legend": { "0": "Calm", "1": "Frustrated", "2": "Very angry" },
+      "probabilities": { "0": 0.04, "1": 0.25, "2": 0.71 },
+      "confidence": 0.45
     }
   },
-  "usage": { "input_tokens": 214, "output_tokens": 0 }
+  "usage": { "input_tokens": 96, "output_tokens": 3 }
 }
 ```
 
@@ -75,15 +87,11 @@ Every question is one of three shapes. The shape decides the reply.
 
 | Type | Asks | Reply |
 |---|---|---|
-| `noul` | A yes/no question | `noul` — a single probability |
+| `noul` | A yes/no question | `noul` — the probability of yes |
 | `choice` | Pick one label from `criteria` | `choice` — the winner, plus `probabilities` and `confidence` |
 | `score` | Rate on an ordered scale | `score` — the expected level, plus `legend`, `probabilities` and `confidence` |
 
-`choice` needs at least two options. `score` needs at least two levels, and the score it returns is the probability-weighted average of the level indices, so `1.72` on a three-level scale means the model leans strongly toward the last level.
-
-<Note>
-`noul` stands for "noul of the above" — it is the boolean case. Every answer also carries the full `probabilities` map, so you never have to re-ask for the runner-up.
-</Note>
+Give `choice` at least two options and `score` at least two levels. The score is the probability-weighted average of the level indices, so `1.67` on a three-level scale means the model leans strongly toward the last level.
 
 ## State
 
@@ -110,20 +118,23 @@ Passing the record as JSON rather than as prose helps: the model sees the same f
 
 ## Images
 
-When the answer depends on something Clef has to look at rather than read, attach images. Up to 4 per request, each an http(s) URL or a `data:` URI:
+When the answer depends on something Clef has to look at rather than read, attach images. Up to 4 per request, each a `data:` URI or an object with `content_type` and `base64`. Remote URLs are not fetched; download the image and embed it.
 
 ```json
 {
   "model": "Cloudflare/clef",
   "state": "Which invoice is overdue?",
-  "images": ["data:image/png;base64,iVBORw0KGgo..."],
+  "images": [
+    "data:image/png;base64,iVBORw0KGgo...",
+    { "content_type": "image/jpeg", "base64": "/9j/4AAQSkZJRg..." }
+  ],
   "questions": {
     "overdue": { "type": "noul", "instructions": "Is any invoice past due?" }
   }
 }
 ```
 
-Clef reads the images before the state, so a question can refer to both. This is how document review, screenshot triage and scanned-form classification work without a separate OCR step.
+Clef reads the images before the state, so a question can refer to both. The whole request body must stay under 13 MiB. This is how document review, screenshot triage and scanned-form classification work without a separate OCR step.
 
 ## Python
 
@@ -135,7 +146,7 @@ import requests
 def decide(state, questions, model="Cloudflare/clef"):
     r = requests.post(
         "https://api.deepinfra.com/v1/decisions",
-        headers={"Authorization": "Bearer YOUR_DEEPINFRA_TOKEN"},
+        headers={"Authorization": "Bearer YOUR_DEEPINFRA_API_KEY"},
         json={"model": model, "state": state, "questions": questions},
         timeout=60,
     )
@@ -167,7 +178,7 @@ The distribution is the point, so use it. The usual production pattern is to act
 ```python
 def route_or_escalate(answer, auto_threshold=0.85, margin=0.15):
     top = answer["probabilities"][answer["choice"]]
-    runner_up = max(p for k, p in answer["probabilities"].items() if k != answer["choice"])
+    runner_up = max((p for k, p in answer["probabilities"].items() if k != answer["choice"]), default=0.0)
     if top >= auto_threshold and top - runner_up >= margin:
         return ("auto", answer["choice"])
     return ("review", answer)
@@ -177,11 +188,11 @@ The margin matters as much as the threshold. A 0.5/0.45 split never looks confid
 
 ## One request, many questions
 
-Every question is scored against the same state, and DeepInfra caches that prefix across the questions of a single call. Asking ten questions in one request costs roughly what asking one costs, so prefer one request with many questions over many requests with one question each.
+Every question is scored against the same state in a single call. Prefer one request with many questions over many requests with one question each: it is one round trip, and the answers come back together.
 
 ## Pricing
 
-Clef bills on input tokens at **$0.24 per 1M tokens**. Output is free — there is no generated text, so there is nothing to charge for.
+Clef bills on input tokens at **$0.24 per 1M tokens**. Output tokens are free. `usage.input_tokens` in the reply is what you are billed for.
 
 ## What Clef is not for
 
