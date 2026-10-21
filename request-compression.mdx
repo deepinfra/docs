@@ -76,8 +76,8 @@ console.log(await response.json());
 
 ## With the OpenAI SDK
 
-The OpenAI SDKs don't compress requests on their own, but a small hook gzips every request
-body they send. Responses, retries, and streaming are unaffected.
+The OpenAI SDKs don't compress requests on their own, but a small hook gzips every JSON
+request body over 1 KB they send. Responses, retries, and streaming are unaffected.
 
 <CodeGroup>
 
@@ -89,9 +89,12 @@ from openai import DefaultHttpxClient, OpenAI
 
 
 def gzip_request_body(request):
-    if request.headers.get("Content-Type") != "application/json" or "Content-Encoding" in request.headers:
+    if not request.headers.get("Content-Type", "").startswith("application/json"):
         return
-    compressed = gzip.compress(request.read())
+    body = request.read()
+    if len(body) < 1024 or "Content-Encoding" in request.headers:
+        return
+    compressed = gzip.compress(body)
     request.headers["Content-Encoding"] = "gzip"
     request.headers["Content-Length"] = str(len(compressed))
     request.stream = type(request.stream)(compressed)
@@ -118,7 +121,9 @@ const openai = new OpenAI({
   apiKey: process.env.DEEPINFRA_API_KEY,
   baseURL: "https://api.deepinfra.com/v1/openai",
   fetch: (url, init = {}) => {
-    if (typeof init.body !== "string") return fetch(url, init);
+    if (typeof init.body !== "string" || Buffer.byteLength(init.body) < 1024) {
+      return fetch(url, { duplex: "half", ...init });
+    }
     const headers = new Headers(init.headers);
     headers.set("Content-Encoding", "gzip");
     headers.delete("Content-Length");
@@ -135,7 +140,7 @@ console.log(response.choices[0].message.content);
 
 </CodeGroup>
 
-Both hooks compress JSON bodies only and leave file uploads as they are.
+Both hooks leave file uploads and small requests as they are.
 
 - **Python** needs `openai` 1.17 or later. The SDK moved from `httpx` to `httpx2` in 3.0;
   reusing `type(request.stream)` keeps the hook working on both. The hook skips a body that
