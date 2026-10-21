@@ -72,6 +72,71 @@ console.log(await response.json());
 
 </CodeGroup>
 
+## With the OpenAI SDK
+
+The OpenAI SDKs don't compress requests on their own, but a small hook gzips every request
+body they send. Responses, retries, and streaming are unaffected.
+
+<CodeGroup>
+
+```python Python
+import gzip
+import os
+
+from openai import DefaultHttpxClient, OpenAI
+
+
+def gzip_request_body(request):
+    body = request.read()
+    if body:
+        compressed = gzip.compress(body)
+        request.headers["Content-Encoding"] = "gzip"
+        request.headers["Content-Length"] = str(len(compressed))
+        request.stream = type(request.stream)(compressed)
+
+
+client = OpenAI(
+    api_key=os.environ["DEEPINFRA_API_KEY"],
+    base_url="https://api.deepinfra.com/v1/openai",
+    http_client=DefaultHttpxClient(event_hooks={"request": [gzip_request_body]}),
+)
+
+response = client.chat.completions.create(
+    model="deepseek-ai/DeepSeek-V4-Flash-0731",
+    messages=[{"role": "user", "content": "Hello!"}],
+)
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+import OpenAI from "openai";
+import { gzipSync } from "node:zlib";
+
+const openai = new OpenAI({
+  apiKey: process.env.DEEPINFRA_API_KEY,
+  baseURL: "https://api.deepinfra.com/v1/openai",
+  fetch: (url, init = {}) => {
+    if (typeof init.body !== "string") return fetch(url, init);
+    const headers = new Headers(init.headers);
+    headers.set("Content-Encoding", "gzip");
+    headers.delete("Content-Length");
+    return fetch(url, { ...init, headers, body: gzipSync(init.body) });
+  },
+});
+
+const response = await openai.chat.completions.create({
+  model: "deepseek-ai/DeepSeek-V4-Flash-0731",
+  messages: [{ role: "user", content: "Hello!" }],
+});
+console.log(response.choices[0].message.content);
+```
+
+</CodeGroup>
+
+The Python hook works with every `openai` release (the SDK moved from `httpx` to `httpx2` in
+3.0; reusing `type(request.stream)` keeps the hook independent of which one is installed).
+The JavaScript hook compresses JSON bodies and leaves file uploads as they are.
+
 ## When it helps
 
 Request compression pays off in proportion to how large your request body is:

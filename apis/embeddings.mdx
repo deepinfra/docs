@@ -88,6 +88,12 @@ for i, item in enumerate(embeddings.data):
     print(f"Text {i}: {item.embedding[:5]}...")  # First 5 dims
 ```
 
+<Tip>
+  Large batches compress well. Gzip the request body and set `Content-Encoding: gzip` to
+  upload a fraction of the bytes. See [Request Compression](/request-compression) for cURL
+  and OpenAI SDK examples.
+</Tip>
+
 ## Supported parameters
 
 | Parameter | Notes |
