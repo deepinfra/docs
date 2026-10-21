@@ -108,7 +108,7 @@ client = OpenAI(
 
 response = client.chat.completions.create(
     model="deepseek-ai/DeepSeek-V4-Flash-0731",
-    messages=[{"role": "user", "content": "Hello!"}],
+    messages=[{"role": "user", "content": "Hello! " * 1000}],
 )
 print(response.choices[0].message.content)
 ```
@@ -133,7 +133,7 @@ const openai = new OpenAI({
 
 const response = await openai.chat.completions.create({
   model: "deepseek-ai/DeepSeek-V4-Flash-0731",
-  messages: [{ role: "user", content: "Hello!" }],
+  messages: [{ role: "user", content: "Hello! ".repeat(1000) }],
 });
 console.log(response.choices[0].message.content);
 ```
