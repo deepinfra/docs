@@ -31,6 +31,8 @@ echo '{
 ```python Python
 import gzip
 import json
+import os
+
 import requests
 
 payload = json.dumps({
@@ -44,7 +46,7 @@ response = requests.post(
     headers={
         "Content-Type": "application/json",
         "Content-Encoding": "gzip",
-        "Authorization": "Bearer $DEEPINFRA_API_KEY",
+        "Authorization": f"Bearer {os.environ['DEEPINFRA_API_KEY']}",
     },
 )
 print(response.json())
@@ -63,7 +65,7 @@ const response = await fetch("https://api.deepinfra.com/v1/openai/chat/completio
   headers: {
     "Content-Type": "application/json",
     "Content-Encoding": "gzip",
-    Authorization: "Bearer $DEEPINFRA_API_KEY",
+    Authorization: `Bearer ${process.env.DEEPINFRA_API_KEY}`,
   },
   body: gzipSync(payload),
 });
@@ -87,12 +89,12 @@ from openai import DefaultHttpxClient, OpenAI
 
 
 def gzip_request_body(request):
-    body = request.read()
-    if body:
-        compressed = gzip.compress(body)
-        request.headers["Content-Encoding"] = "gzip"
-        request.headers["Content-Length"] = str(len(compressed))
-        request.stream = type(request.stream)(compressed)
+    if request.headers.get("Content-Type") != "application/json" or "Content-Encoding" in request.headers:
+        return
+    compressed = gzip.compress(request.read())
+    request.headers["Content-Encoding"] = "gzip"
+    request.headers["Content-Length"] = str(len(compressed))
+    request.stream = type(request.stream)(compressed)
 
 
 client = OpenAI(
@@ -133,9 +135,14 @@ console.log(response.choices[0].message.content);
 
 </CodeGroup>
 
-The Python hook works with every `openai` release (the SDK moved from `httpx` to `httpx2` in
-3.0; reusing `type(request.stream)` keeps the hook independent of which one is installed).
-The JavaScript hook compresses JSON bodies and leaves file uploads as they are.
+Both hooks compress JSON bodies only and leave file uploads as they are.
+
+- **Python** needs `openai` 1.17 or later. The SDK moved from `httpx` to `httpx2` in 3.0;
+  reusing `type(request.stream)` keeps the hook working on both. The hook skips a body that
+  already has a `Content-Encoding`, so a redirected request isn't compressed twice. With
+  `AsyncOpenAI`, pass `DefaultAsyncHttpxClient` and wrap the hook in an `async def`:
+  `async def gzip_request_body_async(request): gzip_request_body(request)`.
+- **JavaScript** uses `node:zlib`, so it runs on Node.js, Bun, and Deno, not in the browser.
 
 ## When it helps
 
