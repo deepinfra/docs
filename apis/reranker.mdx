@@ -75,9 +75,19 @@ curl -X POST \
 }
 ```
 
-Scores are relevance probabilities in the range [0, 1], in the same order as the input documents. Sort by score descending to get the most relevant documents first.
+Scores are in the same order as the input documents, and a higher score means a more relevant document. Sort by score descending to get the most relevant documents first.
 
-`queries` and `documents` must be the same length, except that a single query is broadcast across many documents (the common case shown above). An optional `instruction` field lets you steer the reranking task; it defaults to `"Given a web search query, retrieve relevant passages that answer the query"`.
+What a score means depends on the model:
+
+| Model | Score |
+|-------|-------|
+| `Qwen/Qwen3-Reranker-0.6B`, `Qwen/Qwen3-Reranker-4B`, `Qwen/Qwen3-Reranker-8B` | Probability in [0, 1] |
+| `nvidia/llama-nemotron-rerank-vl-1b-v2` | Probability in [0, 1] |
+| `nvidia/Nemotron-3.5-Rerank-8B-BF16` | Raw logit, unbounded and often negative |
+
+Compare scores only within one model. A cutoff tuned on one reranker (for example, keep documents scoring above 0.5) does not carry over to another.
+
+`queries` and `documents` must be the same length, except that a single query is broadcast across many documents (the common case shown above). The Qwen3 rerankers take an optional `instruction` field that steers the reranking task; it defaults to `"Given a web search query, retrieve relevant passages that answer the query"`. Other models ignore it.
 
 ## Usage in a RAG pipeline
 
