@@ -14,65 +14,6 @@ To use it, gzip the request body and set the `Content-Encoding: gzip` header. It
 response streams back — the request body is a single upload regardless of how the response
 is returned.
 
-<CodeGroup>
-
-```bash cURL
-# Pipe the JSON body through gzip and send it with Content-Encoding: gzip
-echo '{
-  "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
-  "messages": [{"role": "user", "content": "Hello!"}]
-}' | gzip | curl "https://api.deepinfra.com/v1/openai/chat/completions" \
-  -H "Content-Type: application/json" \
-  -H "Content-Encoding: gzip" \
-  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
-  --data-binary @-
-```
-
-```python Python
-import gzip
-import json
-import os
-
-import requests
-
-payload = json.dumps({
-    "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
-    "messages": [{"role": "user", "content": "Hello!"}],
-}).encode("utf-8")
-
-response = requests.post(
-    "https://api.deepinfra.com/v1/openai/chat/completions",
-    data=gzip.compress(payload),
-    headers={
-        "Content-Type": "application/json",
-        "Content-Encoding": "gzip",
-        "Authorization": f"Bearer {os.environ['DEEPINFRA_API_KEY']}",
-    },
-)
-print(response.json())
-```
-
-```javascript JavaScript
-const payload = JSON.stringify({
-  model: "deepseek-ai/DeepSeek-V4-Flash-0731",
-  messages: [{ role: "user", content: "Hello!" }],
-});
-const gzipped = new Blob([payload]).stream().pipeThrough(new CompressionStream("gzip"));
-
-const response = await fetch("https://api.deepinfra.com/v1/openai/chat/completions", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Content-Encoding": "gzip",
-    Authorization: `Bearer ${process.env.DEEPINFRA_API_KEY}`,
-  },
-  body: await new Response(gzipped).arrayBuffer(),
-});
-console.log(await response.json());
-```
-
-</CodeGroup>
-
 ## With the OpenAI SDK
 
 The OpenAI SDKs don't compress requests on their own, but a small hook gzips every JSON
@@ -137,22 +78,79 @@ console.log(response.choices[0].message.content);
 
 Both hooks leave file uploads as they are.
 
-- **Python** needs `openai` 1.17 or later. The SDK moved from `httpx` to `httpx2` in 3.0;
-  reusing `type(request.stream)` keeps the hook working on both. The hook skips a body that
-  already has a `Content-Encoding`, so a redirected request isn't compressed twice. With
-  `AsyncOpenAI`, pass `DefaultAsyncHttpxClient` and wrap the hook in an `async def`:
+- **Python** needs `openai` 1.17 or later. With `AsyncOpenAI`, pass `DefaultAsyncHttpxClient`
+  and wrap the hook in an `async def`:
   `async def gzip_request_body_async(request): gzip_request_body(request)`.
-- **JavaScript** uses only web standards (`CompressionStream`) and no Node-specific APIs, so it
-  runs on Node.js 18+, Bun, and Deno.
+- **JavaScript** runs on Node.js 18+, Bun, and Deno.
+
+## Without an SDK
+
+Gzip the JSON body yourself and send it with `Content-Encoding: gzip`:
+
+<CodeGroup>
+
+```bash cURL
+# Pipe the JSON body through gzip and send it with Content-Encoding: gzip
+echo '{
+  "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
+  "messages": [{"role": "user", "content": "Hello!"}]
+}' | gzip | curl "https://api.deepinfra.com/v1/openai/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "Content-Encoding: gzip" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
+  --data-binary @-
+```
+
+```python Python
+import gzip
+import json
+import os
+
+import requests
+
+payload = json.dumps({
+    "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "messages": [{"role": "user", "content": "Hello!"}],
+}).encode("utf-8")
+
+response = requests.post(
+    "https://api.deepinfra.com/v1/openai/chat/completions",
+    data=gzip.compress(payload),
+    headers={
+        "Content-Type": "application/json",
+        "Content-Encoding": "gzip",
+        "Authorization": f"Bearer {os.environ['DEEPINFRA_API_KEY']}",
+    },
+)
+print(response.json())
+```
+
+```javascript JavaScript
+const payload = JSON.stringify({
+  model: "deepseek-ai/DeepSeek-V4-Flash-0731",
+  messages: [{ role: "user", content: "Hello!" }],
+});
+const gzipped = new Blob([payload]).stream().pipeThrough(new CompressionStream("gzip"));
+
+const response = await fetch("https://api.deepinfra.com/v1/openai/chat/completions", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Content-Encoding": "gzip",
+    Authorization: `Bearer ${process.env.DEEPINFRA_API_KEY}`,
+  },
+  body: await new Response(gzipped).arrayBuffer(),
+});
+console.log(await response.json());
+```
+
+</CodeGroup>
 
 ## When it helps
 
-Request compression pays off in proportion to how large your request body is:
-
-- **Worth it** for large bodies — long conversations, large embeddings batches, big inputs —
-  where trimming the upload meaningfully cuts bandwidth and transfer time.
-- **Not worth it** for small requests (a short prompt). gzip adds a small header and a little
-  CPU on both ends, so for tiny bodies there's nothing to gain.
+The savings grow with the size of the request: long conversations, large embeddings batches,
+and big inputs upload a fraction of the bytes. For a tiny body like a one-word prompt, gzip
+adds a few bytes, which is harmless, so the hooks above simply compress everything.
 
 <Note>
   **gzip only.** `Content-Encoding: gzip` is the only supported request compression. Other
