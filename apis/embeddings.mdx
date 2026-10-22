@@ -1,6 +1,6 @@
 ---
 title: Embeddings
-description: Generate embedding vectors from text using the OpenAI-compatible embeddings API.
+description: Generate embedding vectors from text and images using the OpenAI-compatible embeddings API.
 icon: vector-square
 ---
 
@@ -88,12 +88,77 @@ for i, item in enumerate(embeddings.data):
     print(f"Text {i}: {item.embedding[:5]}...")  # First 5 dims
 ```
 
+## Image inputs
+
+Multimodal embedding models such as `nvidia/Nemotron-3.5-Embed-1B-BF16` and `nvidia/Nemotron-3.5-Embed-8B-BF16` embed images, for example screenshots of document pages, into the same vector space as text. To embed an image, pass an `input` item as a list of content parts instead of a string. The parts of one item are embedded together, so a page image and its extracted text produce a single embedding.
+
+These are asymmetric retrieval models: set `input_type` to `document` for the pages you index and to `query` for search queries.
+
+```python
+import base64
+
+with open("report-page-1.png", "rb") as f:
+    page_url = "data:image/png;base64," + base64.b64encode(f.read()).decode()
+# An https:// URL to the image works too.
+
+documents = openai.embeddings.create(
+    model="nvidia/Nemotron-3.5-Embed-1B-BF16",
+    input=[
+        "Revenue grew 12% year over year.",
+        [{"type": "image_url", "image_url": {"url": page_url}}],
+        [
+            {"type": "text", "text": "Q3 report, page 1"},
+            {"type": "image_url", "image_url": {"url": page_url}},
+        ],
+    ],
+    encoding_format="float",
+    extra_body={"input_type": "document"},
+)
+
+query = openai.embeddings.create(
+    model="nvidia/Nemotron-3.5-Embed-1B-BF16",
+    input="How fast did revenue grow last quarter?",
+    encoding_format="float",
+    extra_body={"input_type": "query"},
+)
+
+print(documents.usage)
+```
+
+The Nemotron-3.5-Embed models take at most one image per item.
+
+### Image tokens
+
+The response reports the tokens of the items that contain an image as `image_tokens`:
+
+```json
+"usage": {
+  "prompt_tokens": 2428,
+  "total_tokens": 2428,
+  "prompt_tokens_details": {
+    "image_tokens": 2415
+  }
+}
+```
+
+`prompt_tokens` is the total. `image_tokens` is the part billed at the model's image-token price, and the rest is billed at its regular input price. Text-only items (the first item above) bill at the input price. Text inside an item that also contains an image (the third item) counts as image tokens. Prices are listed on each model's page.
+
+For the Nemotron-3.5-Embed models, an image is scaled so that its longest edge is at most 1120 px (smaller images are not scaled up) and split into a grid of 28 px tiles. It costs `rows × columns + rows` tokens:
+
+| Image | Tokens |
+|-------|--------|
+| A4 or Letter page | about 1,200–1,280 |
+| 1920×1080 screenshot | 943 |
+| 512×512 | 380 |
+| 1120×1120 or larger square (maximum) | 1,640 |
+
 ## Supported parameters
 
 | Parameter | Notes |
 |-----------|-------|
 | `model` | Embedding model name |
-| `input` | String or array of strings |
+| `input` | String, or an array of strings and content-part lists (see [Image inputs](#image-inputs)) |
+| `input_type` | `query` or `document` (alias `passage`), for asymmetric retrieval models |
 | `encoding_format` | `float` only |
 
 ## Available models
