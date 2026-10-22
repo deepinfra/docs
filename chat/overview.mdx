@@ -155,6 +155,12 @@ curl "https://api.deepinfra.com/v1/openai/chat/completions" \
 
 The longer the conversation, the more tokens it uses. The maximum conversation length is determined by the model's context size.
 
+<Tip>
+  Long histories compress well. Gzip the request body and set `Content-Encoding: gzip` to
+  upload a fraction of the bytes. See [Request Compression](/request-compression) for cURL
+  and OpenAI SDK examples.
+</Tip>
+
 ## Supported parameters
 
 | Parameter | Notes |

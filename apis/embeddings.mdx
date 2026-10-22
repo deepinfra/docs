@@ -88,6 +88,12 @@ for i, item in enumerate(embeddings.data):
     print(f"Text {i}: {item.embedding[:5]}...")  # First 5 dims
 ```
 
+<Tip>
+  Large batches compress well. Gzip the request body and set `Content-Encoding: gzip` to
+  upload a fraction of the bytes. See [Request Compression](/request-compression) for cURL
+  and OpenAI SDK examples.
+</Tip>
+
 ## Image inputs
 
 Multimodal embedding models such as `nvidia/Nemotron-3.5-Embed-1B-BF16` and `nvidia/Nemotron-3.5-Embed-8B-BF16` embed images, for example screenshots of document pages, into the same vector space as text. To embed an image, pass an `input` item as a list of content parts instead of a string. The parts of one item are embedded together, so a page image and its extracted text produce a single embedding.
