@@ -32,7 +32,10 @@ def gzip_request_body(request):
     is_json = request.headers.get("Content-Type", "").startswith("application/json")
     if not is_json or "Content-Encoding" in request.headers:
         return
-    compressed = gzip.compress(request.read())
+    body = request.read()
+    if not body:
+        return
+    compressed = gzip.compress(body)
     request.headers["Content-Encoding"] = "gzip"
     request.headers["Content-Length"] = str(len(compressed))
     request.stream = type(request.stream)(compressed)
