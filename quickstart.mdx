@@ -118,6 +118,26 @@ npm install openai
 
 </CodeGroup>
 
+## Compress large requests (optional)
+
+Sending long conversations or big batches? Gzip the request body and add
+`Content-Encoding: gzip`. JSON typically shrinks 4–8× on the wire once a body is a few KB.
+The tiny body below only shows the shape; compressed, it would grow slightly:
+
+```bash
+echo '{
+  "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
+  "messages": [{"role": "user", "content": "Hello!"}]
+}' | gzip | curl "https://api.deepinfra.com/v1/openai/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "Content-Encoding: gzip" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
+  --data-binary @-
+```
+
+The OpenAI SDKs can compress JSON request bodies with a few lines of setup. See
+[Request Compression](/request-compression).
+
 ## Next steps
 
 <CardGroup cols={2}>
