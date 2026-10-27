@@ -81,10 +81,26 @@ console.log(response.choices[0].message.content);
 
 Both hooks leave file uploads as they are.
 
-- **Python** needs `openai` 1.17 or later. With `AsyncOpenAI`, pass `DefaultAsyncHttpxClient`
-  and wrap the hook in an `async def`:
-  `async def gzip_request_body_async(request): gzip_request_body(request)`.
+- **Python** needs `openai` 1.17 or later.
 - **JavaScript** needs `openai` 5 or later, on Node.js, Bun, or Deno.
+
+With `AsyncOpenAI`, wrap the Python hook in an `async def` and pass it to
+`DefaultAsyncHttpxClient`:
+
+```python
+from openai import AsyncOpenAI, DefaultAsyncHttpxClient
+
+
+async def gzip_request_body_async(request):
+    gzip_request_body(request)
+
+
+client = AsyncOpenAI(
+    api_key=os.environ["DEEPINFRA_API_KEY"],
+    base_url="https://api.deepinfra.com/v1/openai",
+    http_client=DefaultAsyncHttpxClient(event_hooks={"request": [gzip_request_body_async]}),
+)
+```
 
 ## Without an SDK
 
