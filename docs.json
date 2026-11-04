@@ -118,7 +118,6 @@
             "pages": [
               "integrations/openshell",
               "integrations/anthropic",
-              "integrations/opencode",
               "integrations/langchain",
               "integrations/llama-index",
               "integrations/ai-sdk",
