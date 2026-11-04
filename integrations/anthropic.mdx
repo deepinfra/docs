@@ -123,15 +123,25 @@ Claude Code's slots are a capability/cost ladder — `haiku` < `sonnet` < `opus`
 |---|---|---|---|
 | `fable` | `moonshotai/Kimi-K3` | 1M | Strongest open-weights agentic coder (Terminal-Bench 2.1 88.3, SWE Marathon 42.0, vendor-stated). Also the priciest of the set by a wide margin, and the slowest to finish — exactly the tradeoff the `fable` slot exists for. |
 | `opus` | `deepseek-ai/DeepSeek-V4-Pro-0813` | 1M | 1.6T-param MoE built for advanced reasoning and long-running agent tasks. The official release, with much stronger agentic behaviour than the preview. Your escalation model when `sonnet` stalls. |
-| `sonnet` | `deepseek-ai/DeepSeek-V4-Flash-0731` | 1M | Daily driver. Near-flagship agentic quality (Terminal-Bench 2.1 82.7, vendor-stated) at a small fraction of the cost of the slots above it, with the full 1M context — the right economics for the model you run all day. |
+| `sonnet` | `deepseek-ai/DeepSeek-V4.1-Flash-1017` | 1M | Daily driver and by far the most-used DeepInfra model in Claude Code. Strong agentic coding at a small fraction of the cost of the slots above it, with the full 1M context and the cheapest cache reads of the set — the right economics for the model you run all day. |
 | `haiku` | `inclusionAI/Ling-3.0-flash` | 128K | Background tasks. ~400 tok/s and the cheapest of the set — tuned for token efficiency under tight latency and serving-cost budgets. |
-| custom | `zai-org/GLM-5.2` | 1M | Top *third-party-measured* open-weights model on Terminal-Bench 2.0 (81.0%), the closest benchmark to real agentic terminal work. Independently verified rather than vendor-stated — a good second opinion when a task matters and you want a different model family on it. |
+| custom | `zai-org/GLM-5.3` | 1M | A different model family for a second opinion when a task matters. Strong agentic coder with the full 1M context; `zai-org/GLM-5.3-Flash` is the budget option in the same family. |
 
 All five support prompt caching, which makes cache reads substantially cheaper than fresh input — worth enabling for long agent sessions. See each model's page on [deepinfra.com/models](https://deepinfra.com/models) for current per-token pricing.
 
 <Note>
-  Use the dated slugs — `DeepSeek-V4-Pro-0813` and `DeepSeek-V4-Flash-0731`. The undated `deepseek-ai/DeepSeek-V4-Pro` and `deepseek-ai/DeepSeek-V4-Flash` are the earlier preview checkpoints, which the dated releases supersede.
+  Use the dated slugs — `DeepSeek-V4.1-Flash-1017` and `DeepSeek-V4-Pro-0813`. The undated `deepseek-ai/DeepSeek-V4.1-Flash` and `deepseek-ai/DeepSeek-V4-Pro` are the earlier checkpoints, which the dated releases supersede.
 </Note>
+
+### Context window
+
+Claude Code doesn't know DeepInfra model names, so it assumes a 200K context window for every one of them and auto-compacts the conversation at that point — on a 1M model that throws away 80% of the window. Tell it the real size:
+
+- **1M models** (all of the table above except `haiku`): append `[1m]` to the model name wherever you set it — `deepseek-ai/DeepSeek-V4.1-Flash-1017[1m]`. Claude Code strips the suffix before sending the request to DeepInfra.
+- **Any other size**: set `CLAUDE_CODE_MAX_CONTEXT_TOKENS` to the model's context window in tokens, for example `131072`. It applies to model names without `[1m]`.
+- Keep `CLAUDE_CODE_MAX_OUTPUT_TOKENS` below the model's output limit. The examples below use `16384`.
+
+The startup warning `Model "…" isn't recognized · context assumed to be 200k tokens` means one of the names in your config still needs this.
 
 ### Option A: `.claude/settings.json` (recommended)
 
@@ -145,17 +155,19 @@ Get an API key at [deepinfra.com/dash/api_keys](https://deepinfra.com/dash/api_k
     "ANTHROPIC_BASE_URL": "https://api.deepinfra.com/anthropic",
     "ANTHROPIC_AUTH_TOKEN": "<YOUR_DEEPINFRA_API_KEY>",
 
-    "ANTHROPIC_DEFAULT_FABLE_MODEL": "moonshotai/Kimi-K3",
+    "ANTHROPIC_DEFAULT_FABLE_MODEL": "moonshotai/Kimi-K3[1m]",
     "ANTHROPIC_DEFAULT_FABLE_MODEL_NAME": "Kimi K3",
-    "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek-ai/DeepSeek-V4-Pro-0813",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek-ai/DeepSeek-V4-Pro-0813[1m]",
     "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME": "DeepSeek V4 Pro 0813",
-    "ANTHROPIC_DEFAULT_SONNET_MODEL": "deepseek-ai/DeepSeek-V4-Flash-0731",
-    "ANTHROPIC_DEFAULT_SONNET_MODEL_NAME": "DeepSeek V4 Flash 0731",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "deepseek-ai/DeepSeek-V4.1-Flash-1017[1m]",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL_NAME": "DeepSeek V4.1 Flash 1017",
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "inclusionAI/Ling-3.0-flash",
     "ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME": "Ling 3.0 Flash",
+    "CLAUDE_CODE_MAX_CONTEXT_TOKENS": "131072",
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "16384",
 
-    "ANTHROPIC_CUSTOM_MODEL_OPTION": "zai-org/GLM-5.2",
-    "ANTHROPIC_CUSTOM_MODEL_OPTION_NAME": "GLM-5.2"
+    "ANTHROPIC_CUSTOM_MODEL_OPTION": "zai-org/GLM-5.3[1m]",
+    "ANTHROPIC_CUSTOM_MODEL_OPTION_NAME": "GLM-5.3"
   }
 }
 ```
@@ -167,7 +179,9 @@ Notes on this file:
 - `ANTHROPIC_BASE_URL` has **no** `/v1` suffix — Claude Code appends `/v1/messages` itself.
 - `ANTHROPIC_AUTH_TOKEN` is sent as `Authorization: Bearer …`. `ANTHROPIC_API_KEY` (sent as `x-api-key`) works too.
 - Each `*_MODEL_NAME` sets the label shown in the picker; it is cosmetic.
-- `ANTHROPIC_CUSTOM_MODEL_OPTION` adds one extra picker entry. Any other DeepInfra model still works via `/model <name>` as free text.
+- `ANTHROPIC_CUSTOM_MODEL_OPTION` adds one extra picker entry. Any other DeepInfra model still works via `/model <name>` as free text; append `[1m]` for a 1M model.
+- `CLAUDE_CODE_MAX_CONTEXT_TOKENS` covers the one name above without `[1m]`, the 128K `haiku` model.
+- Claude Code's effort level (`/effort`, or `output_config.effort` on the wire) is passed to the model as DeepInfra's `reasoning_effort`.
 - **VS Code extension:** if the picker doesn't pick up the config after a window reload, also add the same variables under `claudeCode.environmentVariables` in your VS Code settings.
 
 ### Option B: shell function with environment variables
@@ -178,12 +192,13 @@ If you'd rather keep your default Claude Code setup untouched and switch per-inv
 deepinfra() {
   export ANTHROPIC_BASE_URL=https://api.deepinfra.com/anthropic
   export ANTHROPIC_AUTH_TOKEN=$DEEPINFRA_API_KEY
-  export ANTHROPIC_MODEL=deepseek-ai/DeepSeek-V4-Flash-0731
-  export ANTHROPIC_DEFAULT_FABLE_MODEL=moonshotai/Kimi-K3
-  export ANTHROPIC_DEFAULT_OPUS_MODEL=deepseek-ai/DeepSeek-V4-Pro-0813
-  export ANTHROPIC_DEFAULT_SONNET_MODEL=deepseek-ai/DeepSeek-V4-Flash-0731
+  export ANTHROPIC_MODEL='deepseek-ai/DeepSeek-V4.1-Flash-1017[1m]'
+  export ANTHROPIC_DEFAULT_FABLE_MODEL='moonshotai/Kimi-K3[1m]'
+  export ANTHROPIC_DEFAULT_OPUS_MODEL='deepseek-ai/DeepSeek-V4-Pro-0813[1m]'
+  export ANTHROPIC_DEFAULT_SONNET_MODEL='deepseek-ai/DeepSeek-V4.1-Flash-1017[1m]'
   export ANTHROPIC_DEFAULT_HAIKU_MODEL=inclusionAI/Ling-3.0-flash
   export CLAUDE_CODE_SUBAGENT_MODEL=inclusionAI/Ling-3.0-flash
+  export CLAUDE_CODE_MAX_CONTEXT_TOKENS=131072
   export CLAUDE_CODE_MAX_OUTPUT_TOKENS=16384
   claude "$@"
 }
@@ -197,13 +212,15 @@ The same variable names work in both options — as JSON keys under `env`, or as
 
 | Environment variable | Description | Example |
 |---|---|---|
-| `ANTHROPIC_MODEL` | The primary model Claude Code uses for all tasks | `deepseek-ai/DeepSeek-V4-Flash-0731` |
-| `ANTHROPIC_DEFAULT_FABLE_MODEL` | Model used for the `fable` alias (deepest reasoning, slowest, priciest) | `moonshotai/Kimi-K3` |
-| `ANTHROPIC_DEFAULT_OPUS_MODEL` | Model used for the `opus` alias (hard tasks, escalation) | `deepseek-ai/DeepSeek-V4-Pro-0813` |
-| `ANTHROPIC_DEFAULT_SONNET_MODEL` | Model used for the `sonnet` alias (daily coding) | `deepseek-ai/DeepSeek-V4-Flash-0731` |
+| `ANTHROPIC_MODEL` | The primary model Claude Code uses for all tasks | `deepseek-ai/DeepSeek-V4.1-Flash-1017[1m]` |
+| `ANTHROPIC_DEFAULT_FABLE_MODEL` | Model used for the `fable` alias (deepest reasoning, slowest, priciest) | `moonshotai/Kimi-K3[1m]` |
+| `ANTHROPIC_DEFAULT_OPUS_MODEL` | Model used for the `opus` alias (hard tasks, escalation) | `deepseek-ai/DeepSeek-V4-Pro-0813[1m]` |
+| `ANTHROPIC_DEFAULT_SONNET_MODEL` | Model used for the `sonnet` alias (daily coding) | `deepseek-ai/DeepSeek-V4.1-Flash-1017[1m]` |
 | `ANTHROPIC_DEFAULT_HAIKU_MODEL` | Model used for the `haiku` alias and background tasks (tab completions, commit messages) | `inclusionAI/Ling-3.0-flash` |
 | `CLAUDE_CODE_SUBAGENT_MODEL` | Model used for subagents (parallel background tasks) | `inclusionAI/Ling-3.0-flash` |
-| `ANTHROPIC_CUSTOM_MODEL_OPTION` | Adds one extra entry to the `/model` picker | `zai-org/GLM-5.2` |
+| `ANTHROPIC_CUSTOM_MODEL_OPTION` | Adds one extra entry to the `/model` picker | `zai-org/GLM-5.3[1m]` |
+| `CLAUDE_CODE_MAX_CONTEXT_TOKENS` | Context window Claude Code assumes for model names without `[1m]` (it assumes 200K otherwise) | `131072` |
+| `CLAUDE_CODE_MAX_OUTPUT_TOKENS` | Per-request output cap; keep it below the model's output limit | `16384` |
 
 Each `*_MODEL` variable above has an optional `*_MODEL_NAME` companion (e.g. `ANTHROPIC_DEFAULT_OPUS_MODEL_NAME`) that sets the display label in the picker.
 
