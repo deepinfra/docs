@@ -46,6 +46,8 @@ Where an area has two scopes, the `:read` one only reads and the full one also c
 
 Speaking with a voice runs a model, so it needs `inference` as well as `voice:read`.
 
+Each endpoint's page in the API Reference names the scope a key needs to call it. The [interactive API explorer](https://api.deepinfra.com/docs) can also filter endpoints by scope.
+
 A request the key's scopes do not allow is refused with `403` and names the missing scope:
 
 ```json
