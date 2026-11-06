@@ -21,7 +21,7 @@ Authorization: Bearer $DEEPINFRA_API_KEY
 
 ### Scopes
 
-Each API key has scopes that say what it may do. You choose them when you create the key and can change them at any time on the key's page in the dashboard. A new key starts with `inference`, `models:read`, `account:read`, `lora:read` and `voice:read`: enough to run and look up models.
+Each API key has scopes that say what it may do, or is [unrestricted](#unrestricted-keys). You choose them when you create the key and can change them at any time on the key's page in the dashboard. A new key starts with `inference`, `models:read`, `account:read`, `lora:read` and `voice:read`: enough to run and look up models.
 
 Where an area has two scopes, the `:read` one only reads and the full one also creates, changes and deletes. The full one includes its `:read` scope, so a key never needs both.
 
@@ -54,11 +54,17 @@ A request the key's scopes do not allow is refused with `403` and names the miss
 {"detail": {"error": "this API key does not have the 'billing:read' scope"}}
 ```
 
-Some actions are never open to an API key, whatever its scopes: managing API keys, changing payment details, setting spending limits and topping up all need a dashboard login.
+Some actions are never open to an API key, whatever its scopes, unrestricted included: managing API keys, changing payment details, setting spending limits and topping up all need a dashboard login.
 
-<Note>
-Keys created before scopes existed show **Unset** in the dashboard. They keep everything listed in the table above, but not scopes DeepInfra adds later. To limit such a key, or to give it a newer scope, choose its scopes on the key's page.
-</Note>
+#### Unrestricted keys
+
+A key can be **unrestricted** instead of scoped: it may do everything an API key can, including whatever scopes DeepInfra adds later. Choose **Unrestricted** when you create the key or on its page in the dashboard, which then shows it as `unrestricted`. Through the API, set `scopes` to `["unrestricted"]`, on its own: combined with other scopes it is refused with `422`.
+
+<Warning>
+Anyone holding an unrestricted key can do everything an API key can on your account, now and as new scopes arrive. Prefer a key with only the scopes it needs.
+</Warning>
+
+Keys created before scopes existed are unrestricted. To limit one, choose **Scoped** on the key's page and pick its scopes.
 
 ## Scoped JWT
 
