@@ -340,7 +340,7 @@ For the full request and response schema, see the [API reference](/api-reference
 
 ## Errors
 
-Errors use the OpenAI error object. A prompt that does not fit the model's context window fails with the code `context_length_exceeded`, as an HTTP 400 or as a `response.failed` event when the stream had started. Codex CLI compacts the conversation and retries on that code.
+Errors use the OpenAI error object. A prompt that does not fit the model's context window fails with the code `context_length_exceeded`, as an HTTP 400 or as a `response.failed` event when the stream had started.
 
 ```json
 {
@@ -406,7 +406,6 @@ Function tools, streaming with `Runner.run_streamed` and client-side sessions su
 ```toml
 model = "deepseek-ai/DeepSeek-V4.1-Flash-1017"
 model_provider = "deepinfra"
-model_context_window = 1048576
 
 [model_providers.deepinfra]
 name = "DeepInfra"
@@ -422,7 +421,9 @@ export DEEPINFRA_API_KEY=<your DeepInfra API key>
 codex
 ```
 
-Codex has no built-in metadata for DeepInfra models. `model_context_window` tells it the model's context size in tokens, which is listed on each [model page](https://deepinfra.com/models/text-generation).
+Codex has no built-in metadata for DeepInfra models and assumes a 272K-token context window. For a model with a smaller window, add `model_context_window` with its context size in tokens, listed on each [model page](https://deepinfra.com/models/text-generation), so Codex compacts the conversation in time. Codex caps this setting at 272K for models it does not know, so leave it out for a 1M model.
+
+If a request still does not fit, Codex stops the turn and reports that the context window is full. Run `/compact` to summarize the conversation, then continue.
 
 ## Microsoft Agent Framework
 
