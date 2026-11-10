@@ -66,6 +66,7 @@
             "group": "More APIs",
             "pages": [
               "apis/completions",
+              "apis/responses",
               "apis/embeddings",
               "apis/reranker",
               "apis/image-generation",

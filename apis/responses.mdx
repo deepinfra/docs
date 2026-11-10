@@ -1,0 +1,429 @@
+---
+title: Responses API
+description: OpenAI-compatible Responses API for the OpenAI SDK, the Agents SDK and Codex CLI. Served statelessly.
+icon: arrow-right-arrow-left
+---
+
+DeepInfra serves the OpenAI [Responses API](https://platform.openai.com/docs/api-reference/responses) for every chat model in [our catalog](https://deepinfra.com/models/text-generation). It runs on the same models, pricing and rate limits as [Chat Completions](/chat/overview), so pick the API your client speaks. The OpenAI Agents SDK and Codex CLI speak Responses.
+
+The endpoint is:
+
+```
+POST https://api.deepinfra.com/v1/responses
+```
+
+The same route answers at `https://api.deepinfra.com/v1/openai/responses`, so an OpenAI client whose `base_url` is `https://api.deepinfra.com/v1/openai` needs no other change.
+
+<Note>
+  The API is **stateless**: DeepInfra does not store responses. Send the conversation so far with every request, as shown in [Conversations](#conversations). `previous_response_id`, `conversation` and `background` are not supported.
+</Note>
+
+## Example
+
+<CodeGroup>
+
+```python Python
+import os
+
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["DEEPINFRA_API_KEY"],
+    base_url="https://api.deepinfra.com/v1/openai",
+)
+
+response = client.responses.create(
+    model="deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    instructions="You are a concise assistant.",
+    input="What is the capital of France?",
+)
+
+print(response.output_text)
+```
+
+```javascript JavaScript
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.DEEPINFRA_API_KEY,
+  baseURL: "https://api.deepinfra.com/v1/openai",
+});
+
+const response = await client.responses.create({
+  model: "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+  instructions: "You are a concise assistant.",
+  input: "What is the capital of France?",
+});
+
+console.log(response.output_text);
+```
+
+```bash cURL
+curl "https://api.deepinfra.com/v1/responses" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
+  -d '{
+      "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "instructions": "You are a concise assistant.",
+      "input": "What is the capital of France?"
+    }'
+```
+
+</CodeGroup>
+
+The reply is a `response` object. `output` is a list of typed items: `message`, `function_call` and `reasoning`.
+
+```json
+{
+  "id": "resp_RjK89KLpzMImf9g8s9cHbuim",
+  "object": "response",
+  "status": "completed",
+  "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+  "output": [
+    {
+      "type": "message",
+      "id": "msg_75b4f7fe65774ef686763d69",
+      "role": "assistant",
+      "status": "completed",
+      "content": [
+        {"type": "output_text", "text": "The capital of France is Paris.", "annotations": []}
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 18,
+    "input_tokens_details": {"cached_tokens": 0, "cache_write_tokens": 0},
+    "output_tokens": 8,
+    "output_tokens_details": {"reasoning_tokens": 0},
+    "total_tokens": 26
+  },
+  "store": false
+}
+```
+
+## Conversations
+
+To continue a conversation, send the earlier turns again. Append the `output` items of the previous response to your `input`, then add the new message:
+
+```python
+history = [{"role": "user", "content": "My name is Ada."}]
+first = client.responses.create(
+    model="deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    input=history,
+)
+
+history += first.output
+history.append({"role": "user", "content": "What is my name?"})
+second = client.responses.create(
+    model="deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    input=history,
+)
+
+print(second.output_text)
+```
+
+`store` is accepted, and every response reports `store: false`. `GET` and `DELETE /v1/responses/{id}` return 404.
+
+## Function calling
+
+Tools use the Responses shape: `name`, `description` and `parameters` sit at the top level of the tool, not under a `function` key as in Chat Completions.
+
+```python
+import json
+
+tools = [{
+    "type": "function",
+    "name": "get_weather",
+    "description": "Get the current weather for a city",
+    "parameters": {
+        "type": "object",
+        "properties": {"city": {"type": "string"}},
+        "required": ["city"],
+    },
+}]
+
+history = [{"role": "user", "content": "What's the weather in Sofia?"}]
+response = client.responses.create(
+    model="deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    input=history,
+    tools=tools,
+)
+
+history += response.output
+for item in response.output:
+    if item.type == "function_call":
+        args = json.loads(item.arguments)
+        history.append({
+            "type": "function_call_output",
+            "call_id": item.call_id,
+            "output": json.dumps({"city": args["city"], "temp_c": 12, "sky": "cloudy"}),
+        })
+
+final = client.responses.create(
+    model="deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    input=history,
+    tools=tools,
+)
+
+print(final.output_text)
+```
+
+`function_call_output.output` is a string, or an array of `input_text` and `input_image` parts. An image part needs a [vision model](/chat/vision).
+
+Only `function` tools are supported. See [Tool Calling](/chat/tool-calling) for more on tools.
+
+## Structured outputs
+
+Set `text.format` to `json_object`, or to `json_schema` with a schema to enforce:
+
+<CodeGroup>
+
+```python Python
+response = client.responses.create(
+    model="deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    input="Extract the name, country, and year from: "
+          "'Alexander Fleming discovered Penicillin in the UK in 1928.'",
+    text={
+        "format": {
+            "type": "json_schema",
+            "name": "breakthrough",
+            "strict": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "country": {"type": "string"},
+                    "year": {"type": "integer"},
+                },
+                "required": ["name", "country", "year"],
+                "additionalProperties": False,
+            },
+        }
+    },
+)
+
+print(response.output_text)
+```
+
+```bash cURL
+curl "https://api.deepinfra.com/v1/responses" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
+  -d '{
+      "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "input": "Extract the name, country, and year from: Alexander Fleming discovered Penicillin in the UK in 1928.",
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "name": "breakthrough",
+          "strict": true,
+          "schema": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "country": {"type": "string"},
+              "year": {"type": "integer"}
+            },
+            "required": ["name", "country", "year"],
+            "additionalProperties": false
+          }
+        }
+      }
+    }'
+```
+
+</CodeGroup>
+
+See [Structured Outputs](/chat/structured-outputs) for the two modes and model support.
+
+## Reasoning
+
+`reasoning.effort` takes the same values as `reasoning_effort` on Chat Completions; see [Reasoning Models](/chat/reasoning). The reasoning comes back as a `reasoning` item ahead of the message, with the text in `content`:
+
+```python
+response = client.responses.create(
+    model="deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    input="Is 391 a prime number?",
+    reasoning={"effort": "low"},
+)
+
+for item in response.output:
+    if item.type == "reasoning":
+        print("Reasoning:", item.content[0].text)
+
+print("Answer:", response.output_text)
+```
+
+Open models reason in plain text, so `summary` is empty and no `encrypted_content` is returned. `reasoning.summary` and `include: ["reasoning.encrypted_content"]` are accepted and ignored. Keep `reasoning` items in the `output` you replay on the next turn: they are accepted as input.
+
+## Images
+
+On a [vision model](/chat/vision), add `input_image` parts to a user message. `image_url` is an HTTPS URL or a `data:` URL; `file_id` is not supported.
+
+```python
+response = client.responses.create(
+    model="deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    input=[{
+        "role": "user",
+        "content": [
+            {"type": "input_text", "text": "What is in this image?"},
+            {
+                "type": "input_image",
+                "image_url": "https://shared.deepinfra.com/models/Qwen/Qwen3-VL-235B-A22B-Instruct/cover_image.188ae740a50d6f2f48bed81f834ffbe2fe5a0f38bd96dbd312ef804c18aad0c4.webp",
+            },
+        ],
+    }],
+)
+
+print(response.output_text)
+```
+
+## Streaming
+
+Set `stream` to `true` to receive typed server-sent events:
+
+```python
+stream = client.responses.create(
+    model="deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    input="Write a haiku about fast inference.",
+    stream=True,
+)
+
+for event in stream:
+    if event.type == "response.output_text.delta":
+        print(event.delta, end="", flush=True)
+    elif event.type == "response.completed":
+        print()
+        print(event.response.usage)
+```
+
+| Event | When |
+|-------|------|
+| `response.created`, `response.in_progress` | The response starts |
+| `response.output_item.added`, `response.output_item.done` | An output item opens and closes |
+| `response.content_part.added`, `response.content_part.done` | A content part of an item opens and closes |
+| `response.output_text.delta`, `response.output_text.done` | Answer text |
+| `response.reasoning_text.delta`, `response.reasoning_text.done` | Reasoning text |
+| `response.function_call_arguments.delta`, `response.function_call_arguments.done` | Arguments of a tool call |
+| `response.completed`, `response.incomplete`, `response.failed` | The response ends; the event carries the full `response` with `usage` |
+
+A response that stops at `max_output_tokens` ends with `response.incomplete` and `incomplete_details.reason`.
+
+## Supported parameters
+
+| Parameter | Notes |
+|-----------|-------|
+| `model` | Any chat model from [our catalog](https://deepinfra.com/models/text-generation) |
+| `input` | A string, or a list of `message`, `function_call`, `function_call_output` and `reasoning` items. Message roles: `user`, `assistant`, `system`, `developer` |
+| `instructions` | System prompt |
+| `max_output_tokens` | Max tokens to generate. See [Max output tokens](/chat/overview#max-output-tokens) |
+| `stream` | See [Streaming](#streaming) |
+| `temperature`, `top_p` | Sampling, as on Chat Completions |
+| `tools`, `tool_choice`, `parallel_tool_calls` | See [Function calling](#function-calling) |
+| `text.format` | See [Structured outputs](#structured-outputs) |
+| `reasoning.effort` | See [Reasoning](#reasoning) |
+| `metadata` | Returned unchanged on the response |
+| `service_tier` | See [Service tier](/chat/overview#service-tier) |
+| `prompt_cache_key` | See [Prompt Caching](/chat/prompt-caching) |
+
+These fields are rejected with a 400, so a request never runs with part of it silently dropped:
+
+- `previous_response_id`, `conversation`, `background`
+- `max_tool_calls`, `truncation: "auto"`, `prompt`, `text.verbosity`
+- `top_logprobs` and `include: ["message.output_text.logprobs"]`
+- `input_file` parts, and `input_image` with a `file_id`
+- Hosted tools: `file_search`, `code_interpreter`, `mcp`, `computer_use`
+
+A `web_search` tool is ignored when the model can't serve it, because Codex attaches one to every request.
+
+For the full request and response schema, see the [API reference](/api-reference/responses/openai-responses).
+
+## Errors
+
+Errors use the OpenAI error object. A prompt that does not fit the model's context window fails with the code `context_length_exceeded`, as an HTTP 400 or as a `response.failed` event when the stream had started. Codex CLI compacts the conversation and retries on that code.
+
+```json
+{
+  "error": {
+    "message": "This model's maximum context length is 40960 tokens. ...",
+    "type": "invalid_request_error",
+    "param": null,
+    "code": "context_length_exceeded"
+  }
+}
+```
+
+## OpenAI Agents SDK
+
+The [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/) uses the Responses API by default. Give it a client that points at DeepInfra:
+
+```python
+import asyncio
+import os
+
+from agents import Agent, OpenAIResponsesModel, Runner, function_tool, set_tracing_disabled
+from openai import AsyncOpenAI
+
+set_tracing_disabled(True)  # tracing uploads to OpenAI and needs an OpenAI key
+
+client = AsyncOpenAI(
+    api_key=os.environ["DEEPINFRA_API_KEY"],
+    base_url="https://api.deepinfra.com/v1/openai",
+)
+
+
+@function_tool
+def get_weather(city: str) -> str:
+    """Get the current weather for a city."""
+    return f"{city}: 12C, cloudy"
+
+
+agent = Agent(
+    name="Weather assistant",
+    instructions="Use the tool for weather questions. Be brief.",
+    model=OpenAIResponsesModel(
+        model="deepseek-ai/DeepSeek-V4.1-Flash-1017",
+        openai_client=client,
+    ),
+    tools=[get_weather],
+)
+
+
+async def main() -> None:
+    result = await Runner.run(agent, "What's the weather in Sofia?")
+    print(result.final_output)
+
+
+asyncio.run(main())
+```
+
+Function tools, streaming with `Runner.run_streamed` and client-side sessions such as `SQLiteSession` work. The SDK's hosted tools (`FileSearchTool`, `CodeInterpreterTool`, `HostedMCPTool`) run on OpenAI's servers, and `previous_response_id` and `conversation_id` need stored responses, so those return a 400.
+
+## Codex CLI
+
+[Codex CLI](https://github.com/openai/codex) talks to any Responses endpoint. Add DeepInfra as a model provider in `~/.codex/config.toml`:
+
+```toml
+model = "deepseek-ai/DeepSeek-V4.1-Flash-1017"
+model_provider = "deepinfra"
+model_context_window = 1048576
+
+[model_providers.deepinfra]
+name = "DeepInfra"
+base_url = "https://api.deepinfra.com/v1/openai"
+env_key = "DEEPINFRA_API_KEY"
+wire_api = "responses"
+```
+
+Then export your key and start Codex:
+
+```bash
+export DEEPINFRA_API_KEY=<your DeepInfra API key>
+codex
+```
+
+Codex has no built-in metadata for DeepInfra models. `model_context_window` tells it the model's context size in tokens, which is listed on each [model page](https://deepinfra.com/models/text-generation).
+
+## Microsoft Agent Framework
+
+See the [Microsoft Agent Framework guide](/integrations/microsoft-agent-framework). Its Responses client keeps state on the server by default, so the guide uses the Chat Completions client.

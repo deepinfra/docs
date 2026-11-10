@@ -83,7 +83,7 @@ Console.WriteLine();
 </CodeGroup>
 
 <Warning>
-  Use the Chat Completions client only: `OpenAIChatCompletionClient` in Python, `GetChatClient()` in .NET. `OpenAIChatClient` (Python) and `GetResponsesClient()` (.NET) target the OpenAI Responses API, which DeepInfra does not serve.
+  Use the Chat Completions client: `OpenAIChatCompletionClient` in Python, `GetChatClient()` in .NET. `OpenAIChatClient` (Python) and `GetResponsesClient()` (.NET) target the OpenAI Responses API, which DeepInfra serves [without server-side state](/apis/responses). Those clients chain tool calls and sessions through `previous_response_id` by default, and such requests fail with a 400. In Python, `default_options={"store": False}` on the agent makes `OpenAIChatClient` send the full history instead.
 </Warning>
 
 Function tools, sessions, and structured output need no DeepInfra-specific setup. `response_format` with `json_schema` and `strict: true` is supported on [many models](https://deepinfra.com/models?q=json); see [Structured Outputs](/chat/structured-outputs).
