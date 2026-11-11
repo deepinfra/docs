@@ -133,7 +133,8 @@
             "group": "API Features",
             "pages": [
               "account/webhooks",
-              "request-compression"
+              "request-compression",
+              "http2"
             ]
           },
           {
