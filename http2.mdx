@@ -15,11 +15,12 @@ of per connection. It does not make an individual request faster — model time 
 
 ## Which clients use it
 
-- **Browsers, `curl`, and Go's `net/http`** use HTTP/2 automatically. In Go that's the default transport; a custom
-  `http.Transport` with its own TLS config needs `ForceAttemptHTTP2: true`.
+- **Browsers, `curl`, and Go's `net/http`** use HTTP/2 automatically. For `curl`, that needs a build with
+  HTTP/2 support (`curl -V` lists `HTTP2`; most do). In Go it's the default transport; a custom `http.Transport`
+  with its own TLS config needs `ForceAttemptHTTP2: true`.
 - **The OpenAI Python SDK** (httpx) uses HTTP/1.1 unless you turn HTTP/2 on, as below.
-- **The OpenAI Node SDK** (Node's built-in `fetch`) uses HTTP/1.1. Use an undici `Agent` with
-  `allowH2: true` to opt in.
+- **The OpenAI Node SDK** (Node's built-in `fetch`) uses HTTP/1.1 on Node 24 and older. Use an undici
+  `Agent` with `allowH2: true` to opt in. Node 26's `fetch` is built on undici 8, which offers HTTP/2 by default.
 
 <CodeGroup>
 
@@ -43,7 +44,8 @@ print(response.choices[0].message.content)
 ```
 
 ```javascript JavaScript
-// npm install undici
+// npm install openai undici
+// Use undici's own fetch so the Agent and fetch come from the same undici version.
 import OpenAI from "openai";
 import { Agent, fetch } from "undici";
 
@@ -73,10 +75,12 @@ curl --http2 https://api.deepinfra.com/v1/openai/models \
 
 ## Good to know
 
-- **Up to 100 concurrent requests per connection.** Beyond that, clients either open another
-  connection (Go's default transport) or wait for a free slot (browsers, and httpx, which also caps itself at 100).
+- **Up to 100 concurrent requests per connection.** This is per connection, not a rate limit. Beyond
+  it, clients either open another connection (Go's default transport) or wait for a free slot
+  (browsers, and httpx, which also caps itself at 100).
 - **Realtime WebSockets** (`/v1/realtime`) use HTTP/1.1. Browsers and the common WebSocket libraries
   open a separate HTTP/1.1 connection for them automatically. If you build your own TLS config for a
-  WebSocket client, don't offer `h2` in its ALPN list.
+  WebSocket client, don't offer `h2` in its ALPN list: offering it makes Go's `gorilla/websocket` fail with
+  `websocket: protocol "h2" was given but is not supported`.
 - **Streaming, uploads, and [request compression](/request-compression)** work the same over HTTP/2
   as over HTTP/1.1.
