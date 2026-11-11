@@ -4,7 +4,7 @@ description: Default concurrent request limits and how to increase them.
 icon: gauge
 ---
 
-Rate limits apply **only to public models**. **Private dedicated endpoints have no rate limits**: they are your own [deployments on dedicated GPUs](/private-models/custom-llms), and their capacity is the GPUs you deploy. When every instance is busy, a dedicated endpoint returns **429** `Model busy`; raise `max_instances` to let it scale further. [LoRA adapters](/private-models/lora) run on a shared base model and count toward that model's limit. The one exception: if we have set a limit for a specific model on your account, that model is rate limited, private or not.
+Rate limits apply **only to public models**. **Private dedicated endpoints have no rate limits**: they are your own [deployments on dedicated GPUs](/private-models/custom-llms), and their capacity is the GPUs you deploy. When a dedicated endpoint is overloaded (its instances are busy and its queue is full), it returns **429** `Model busy`; raise `max_instances` to let it scale further. [LoRA adapters](/private-models/lora) run on a shared base model and count toward that model's limit. The one exception: if we have set a limit for a specific model on your account, that model is rate limited, private or not.
 
 ## Default limit: 200 concurrent requests per model
 
