@@ -44,7 +44,7 @@ print(response.choices[0].message.content)
 ```
 
 ```javascript JavaScript
-// npm install openai undici   (on Node 20: undici@7)
+// npm install openai undici   (Node 20 or Node 22 before 22.19: undici@7)
 // Use undici's own fetch so the Agent and fetch come from the same undici version.
 import OpenAI from "openai";
 import { Agent, fetch } from "undici";
@@ -81,7 +81,7 @@ curl --http2 https://api.deepinfra.com/v1/openai/models \
 - **Realtime WebSockets** (`/v1/realtime`) use HTTP/1.1. Browsers and the common WebSocket libraries
   open a separate HTTP/1.1 connection for them automatically. If you build your own TLS config for a
   WebSocket client, don't offer `h2` in its ALPN list: offering it makes Go's `gorilla/websocket` fail with
-  `websocket: protocol "h2" was given but is not supported; sharing tls.Config with net/http Transport can
-  cause this error`.
+  `websocket: protocol "h2" was given but is not supported`, usually because its `tls.Config` is shared with
+  an `http.Transport`.
 - **Streaming, uploads, and [request compression](/request-compression)** work the same over HTTP/2
   as over HTTP/1.1.
