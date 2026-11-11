@@ -25,24 +25,27 @@ Each API key has scopes that say what it may do, or is [unrestricted](#unrestric
 
 Where an area has two scopes, the `:read` one only reads and the full one also creates, changes and deletes. The full one includes its `:read` scope, so a key never needs both.
 
+{/* Keep the rows in alphabetical order by scope name, as the dashboard and the API list them. */}
 | Scope | What the key may do |
 |---|---|
-| `inference` | Run models: chat and text completions, responses, embeddings, images, speech, transcription, video and tokenization, including the OpenAI- and Anthropic-compatible endpoints and realtime voice |
-| `models:read` | List and look up models, including your private ones, with their docs and input and output schemas, and read your custom deployments: their details, stats, logs and config history, and which GPU configurations are free to deploy on |
-| `models` | Also manage your private models and custom deployments: change or delete models, and deploy, start, stop, update, rebalance and delete deployments |
 | `account:read` | Read the account's profile, rate limits and GPU pool |
-| `lora:read` | List and read your LoRA adapters and the ones available for a model |
-| `lora` | Also create, update and delete LoRA adapters |
-| `voice:read` | List and read your voices |
-| `voice` | Also add, edit and delete custom voices |
+| `account_api_key` | Everything `account_api_key:read` allows, and [create, change and delete the account's API keys](#manage-api-keys-with-an-api-key). [Sensitive](#sensitive-scopes) |
+| `account_api_key:read` | [List the account's API keys and read a key's details](#manage-api-keys-with-an-api-key), never a key's secret |
+| `account_scoped_jwt` | Everything `account_scoped_jwt:read` allows, and [create scoped JWTs](#create-a-scoped-jwt) signed by this key |
 | `account_scoped_jwt:read` | [Inspect scoped JWTs](#inspect-a-jwt) |
-| `account_scoped_jwt` | Also [create scoped JWTs](#create-a-scoped-jwt) signed by this key |
 | `batch` | Create, list and cancel [batch jobs](/batch/introduction), and manage their files |
-| `compute:sandbox` | Create, run and manage [sandboxes](/sandboxes/overview) |
+| `billing:read` | Read usage, invoices, key spending limits and request costs |
 | `compute:agents` | Create, run and manage [agents](/agents/introduction) |
 | `compute:containers` | Rent and manage [GPU containers](/gpu-instances/overview) |
-| `billing:read` | Read usage, invoices, key spending limits and request costs |
+| `compute:sandbox` | Create, run and manage [sandboxes](/sandboxes/overview) |
+| `inference` | Run models: chat and text completions, responses, embeddings, images, speech, transcription, video and tokenization, including the OpenAI- and Anthropic-compatible endpoints and realtime voice |
+| `lora` | Everything `lora:read` allows, and create, update and delete LoRA adapters |
+| `lora:read` | List and read your LoRA adapters and the ones available for a model |
 | `metrics` | Query the account's usage metrics |
+| `models` | Everything `models:read` allows, and manage your private models and custom deployments: change or delete models, and deploy, start, stop, update, rebalance and delete deployments |
+| `models:read` | List and look up models, including your private ones, with their docs and input and output schemas, and read your custom deployments: their details, stats, logs and config history, and which GPU configurations are free to deploy on |
+| `voice` | Everything `voice:read` allows, and add, edit and delete custom voices |
+| `voice:read` | List and read your voices |
 
 Speaking with a voice runs a model, so it needs `inference` as well as `voice:read`.
 
@@ -54,17 +57,40 @@ A request the key's scopes do not allow is refused with `403` and names the miss
 {"detail": {"error": "this API key does not have the 'billing:read' scope"}}
 ```
 
-Some actions are never open to an API key, whatever its scopes, unrestricted included: managing API keys, changing payment details, setting spending limits and topping up all need a dashboard login.
+Some actions are never open to an API key, whatever its scopes, unrestricted included: changing payment details, setting spending limits and topping up all need a dashboard login.
 
 #### Unrestricted keys
 
-A key can be **unrestricted** instead of scoped: it may do everything an API key can, including whatever scopes DeepInfra adds later. Choose **Unrestricted** when you create the key or on its page in the dashboard, which then shows it as `unrestricted`. Through the API, set `scopes` to `["unrestricted"]`, on its own: combined with other scopes it is refused with `422`.
+A key can be **unrestricted** instead of scoped: it has every scope that is not [sensitive](#sensitive-scopes), including whatever scopes DeepInfra adds later. Choose **Unrestricted** when you create the key or on its page in the dashboard, which then shows it as `unrestricted`. Through the API, set `scopes` to `["unrestricted"]`, on its own: combined with other scopes it is refused with `422`.
 
 <Warning>
-Anyone holding an unrestricted key can do everything an API key can on your account, now and as new scopes arrive. Prefer a key with only the scopes it needs.
+Anyone holding an unrestricted key can do everything a non-sensitive scope allows on your account, now and as new scopes arrive. Prefer a key with only the scopes it needs.
 </Warning>
 
 Keys created before scopes existed are unrestricted. To limit one, choose **Scoped** on the key's page and pick its scopes.
+
+#### Sensitive scopes
+
+A **sensitive** scope grants power over the account itself, so it is off by default. Today the only one is `account_api_key`.
+
+- It can be set on a key only once DeepInfra has enabled it for your account. Contact [feedback@deepinfra.com](mailto:feedback@deepinfra.com) to enable it. Until then the dashboard does not offer it, and setting it through the API is refused with `422` (`scopes not enabled for this account: account_api_key`).
+- `unrestricted` does not grant it. A key that needs it must be scoped and hold it by name.
+- An API key can never grant it: not to a key it creates, nor to a key it changes. A key created by another API key can never hold it, even when changed from the dashboard. Such requests are refused with `422`:
+
+```json
+{"detail": {"error": "an API key cannot grant scope: account_api_key. If you need this scope, contact system administrator"}}
+```
+
+The dashboard shows sensitive scopes in red. On an account with a sensitive scope enabled, it labels unrestricted keys "All non-sensitive".
+
+#### Manage API keys with an API key
+
+A key with `account_api_key:read` may list the account's API keys (`GET /v1/api-tokens`) and read one key's details (`GET /v1/api-tokens/id/{token_id}`). Neither ever returns a key's secret. Every unrestricted key has this scope, and so does every key holding `account_api_key`.
+
+A key with `account_api_key` may also create keys (`POST /v1/api-tokens`), change their scopes (`PATCH /v1/api-tokens/id/{token_id}`) and delete them (`DELETE /v1/api-tokens/id/{token_id}`), for every key of the account. When an API key creates a key:
+
+- `scopes` is required. Any scopes that are not sensitive may be given, `unrestricted` included.
+- The new key has no IP allow-list, whatever the creating key's.
 
 ## Scoped JWT
 
