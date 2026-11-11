@@ -340,7 +340,7 @@ For the full request and response schema, see the [API reference](/api-reference
 
 ## Errors
 
-Errors use the OpenAI error object. A prompt that does not fit the model's context window fails with the code `context_length_exceeded`, as an HTTP 400 or as a `response.failed` event when the stream had started.
+Errors use the OpenAI error object. A prompt that does not fit the model's context window fails with the code `context_length_exceeded`: as an HTTP 400 on a non-streaming request, and as a `response.failed` event on a streaming one.
 
 ```json
 {
