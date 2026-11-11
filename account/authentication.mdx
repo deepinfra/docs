@@ -25,26 +25,27 @@ Each API key has scopes that say what it may do, or is [unrestricted](#unrestric
 
 Where an area has two scopes, the `:read` one only reads and the full one also creates, changes and deletes. The full one includes its `:read` scope, so a key never needs both.
 
+{/* Keep the rows in alphabetical order by scope name, as the dashboard and the API list them. */}
 | Scope | What the key may do |
 |---|---|
-| `inference` | Run models: chat and text completions, responses, embeddings, images, speech, transcription, video and tokenization, including the OpenAI- and Anthropic-compatible endpoints and realtime voice |
-| `models:read` | List and look up models, including your private ones, with their docs and input and output schemas, and read your custom deployments: their details, stats, logs and config history, and which GPU configurations are free to deploy on |
-| `models` | Also manage your private models and custom deployments: change or delete models, and deploy, start, stop, update, rebalance and delete deployments |
 | `account:read` | Read the account's profile, rate limits and GPU pool |
-| `lora:read` | List and read your LoRA adapters and the ones available for a model |
-| `lora` | Also create, update and delete LoRA adapters |
-| `voice:read` | List and read your voices |
-| `voice` | Also add, edit and delete custom voices |
+| `account_api_key` | Everything `account_api_key:read` allows, and [create, change and delete the account's API keys](#manage-api-keys-with-an-api-key). [Sensitive](#sensitive-scopes) |
+| `account_api_key:read` | [List the account's API keys and read a key's details](#manage-api-keys-with-an-api-key), never a key's secret |
+| `account_scoped_jwt` | Everything `account_scoped_jwt:read` allows, and [create scoped JWTs](#create-a-scoped-jwt) signed by this key |
 | `account_scoped_jwt:read` | [Inspect scoped JWTs](#inspect-a-jwt) |
-| `account_scoped_jwt` | Also [create scoped JWTs](#create-a-scoped-jwt) signed by this key |
 | `batch` | Create, list and cancel [batch jobs](/batch/introduction), and manage their files |
-| `compute:sandbox` | Create, run and manage [sandboxes](/sandboxes/overview) |
+| `billing:read` | Read usage, invoices, key spending limits and request costs |
 | `compute:agents` | Create, run and manage [agents](/agents/introduction) |
 | `compute:containers` | Rent and manage [GPU containers](/gpu-instances/overview) |
-| `billing:read` | Read usage, invoices, key spending limits and request costs |
+| `compute:sandbox` | Create, run and manage [sandboxes](/sandboxes/overview) |
+| `inference` | Run models: chat and text completions, responses, embeddings, images, speech, transcription, video and tokenization, including the OpenAI- and Anthropic-compatible endpoints and realtime voice |
+| `lora` | Everything `lora:read` allows, and create, update and delete LoRA adapters |
+| `lora:read` | List and read your LoRA adapters and the ones available for a model |
 | `metrics` | Query the account's usage metrics |
-| `account_api_key:read` | [List the account's API keys and read a key's details](#manage-api-keys-with-an-api-key), never a key's secret |
-| `account_api_key` | Also [create, change and delete the account's API keys](#manage-api-keys-with-an-api-key). [Sensitive](#sensitive-scopes) |
+| `models` | Everything `models:read` allows, and manage your private models and custom deployments: change or delete models, and deploy, start, stop, update, rebalance and delete deployments |
+| `models:read` | List and look up models, including your private ones, with their docs and input and output schemas, and read your custom deployments: their details, stats, logs and config history, and which GPU configurations are free to deploy on |
+| `voice` | Everything `voice:read` allows, and add, edit and delete custom voices |
+| `voice:read` | List and read your voices |
 
 Speaking with a voice runs a model, so it needs `inference` as well as `voice:read`.
 
