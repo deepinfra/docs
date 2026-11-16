@@ -4,7 +4,7 @@ description: Use DeepInfra models with the Anthropic Messages API, Claude Code, 
 icon: message-bot
 ---
 
-DeepInfra exposes an Anthropic-compatible Messages API. This means tools that target the Anthropic API — Claude Code, the Anthropic Python and TypeScript SDKs, and any framework with an Anthropic adapter — can point at DeepInfra and use open-source models.
+DeepInfra exposes an Anthropic-compatible Messages API. This means tools that target the Anthropic API — Claude Code, the Anthropic Python and TypeScript SDKs, and any framework with an Anthropic adapter — can point at DeepInfra and use open-source models, as well as the Claude models DeepInfra resells.
 
 ## Endpoint
 
@@ -12,12 +12,14 @@ DeepInfra exposes an Anthropic-compatible Messages API. This means tools that ta
 https://api.deepinfra.com/anthropic
 ```
 
-Two endpoints are available:
+These endpoints are available:
 
 | Endpoint | Description |
 |----------|-------------|
 | `POST /anthropic/v1/messages` | Create a message (chat completion) |
 | `POST /anthropic/v1/messages/count_tokens` | Count tokens for a message request |
+| `GET /anthropic/v1/models` | List models in Anthropic's format |
+| `GET /anthropic/v1/models/{model_id}` | Get one model |
 
 ## Authentication
 
@@ -28,7 +30,7 @@ Both standard Anthropic authentication methods are supported:
 | `Authorization` | `Bearer $DEEPINFRA_API_KEY` |
 | `x-api-key` | `$DEEPINFRA_API_KEY` |
 
-You can also pass `anthropic-version` and `anthropic-beta` headers as needed.
+You can also pass `anthropic-version` and `anthropic-beta` headers as needed. The two model endpoints also answer without a key.
 
 ## Using the Anthropic SDK
 
@@ -111,9 +113,48 @@ curl "https://api.deepinfra.com/anthropic/v1/messages" \
 
 </CodeGroup>
 
+## Model names
+
+Pass a DeepInfra model name, such as `zai-org/GLM-5.2`. Anthropic's Claude models are the ones under `anthropic/`, such as `anthropic/claude-opus-5-5`, billed at the price on their [model page](https://deepinfra.com/models).
+
+A bare Claude id works too:
+
+- `claude-opus-5-5` runs on `anthropic/claude-opus-5-5`.
+- A dated id runs on the undated model when DeepInfra doesn't list the dated one: `claude-haiku-4-5-20251001` runs on `anthropic/claude-haiku-4-5`.
+- A Claude model DeepInfra doesn't resell returns `404` with `not_found_error`.
+
+The `model` field in the reply is the id you sent.
+
+### List models
+
+`GET /anthropic/v1/models` returns the public chat models in Anthropic's format, newest first. It pages with `limit` (up to 1000), `after_id` and `before_id`. `GET /anthropic/v1/models/{model_id}` returns one model and accepts a bare Claude id: `claude-opus-4-8` comes back as `anthropic/claude-opus-4-8`. Neither needs an API key.
+
+<CodeGroup>
+
+```python Python
+for model in client.models.list():
+    print(model.id, model.max_input_tokens)
+
+print(client.models.retrieve("claude-opus-4-8").id)  # anthropic/claude-opus-4-8
+```
+
+```bash cURL
+curl "https://api.deepinfra.com/anthropic/v1/models?limit=1000"
+
+# Only the Claude models
+curl -s "https://api.deepinfra.com/anthropic/v1/models?limit=1000" \
+  | jq -r '.data[].id | select(startswith("anthropic/"))'
+```
+
+</CodeGroup>
+
 ## Using with Claude Code
 
 Claude Code can use DeepInfra as its backend. Claude Code exposes four model slots — `opus`, `sonnet`, `fable`, and `haiku` — plus one extra custom entry in the `/model` picker. You map each slot to a DeepInfra model.
+
+<Warning>
+  Map every slot you use. For a slot with no mapping, Claude Code sends Anthropic's own id, such as `claude-opus-5-5` when you set no model at all. DeepInfra runs that on the resold Claude model at its price (see [Model names](#model-names)), and an id DeepInfra doesn't resell fails with a `404`.
+</Warning>
 
 ### Recommended models
 
@@ -228,6 +269,10 @@ Each `*_MODEL` variable above has an optional `*_MODEL_NAME` companion (e.g. `AN
   `ANTHROPIC_DEFAULT_HAIKU_MODEL` is used for lightweight background tasks like tab completions and commit messages. Pick a fast, cheap model here to keep costs low. The older `ANTHROPIC_SMALL_FAST_MODEL` variable is deprecated — use `ANTHROPIC_DEFAULT_HAIKU_MODEL` instead.
 </Note>
 
+### Claude models in Claude Code
+
+To run one of Anthropic's Claude models through DeepInfra, map a slot to its `anthropic/` name, for example `ANTHROPIC_DEFAULT_OPUS_MODEL=anthropic/claude-opus-5-5`. To have them in the `/model` picker, set `CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1`. Claude Code then reads the [model list](#list-models) and keeps only the ids that contain `claude` or `anthropic`, so the picker gains the `anthropic/` models and none of the open ones.
+
 ## Streaming
 
 Streaming works the same as the Anthropic API — use `stream=True` (Python) or `stream: true` (JS/cURL):
@@ -261,11 +306,13 @@ curl "https://api.deepinfra.com/anthropic/v1/messages/count_tokens" \
     }'
 ```
 
+For Claude models the count is an estimate, because DeepInfra has no Claude tokenizer.
+
 ## Notes
 
-- You are running open-source models via the Anthropic protocol, not Anthropic's Claude models.
-- Model names use DeepInfra identifiers (e.g. `zai-org/GLM-5.2`), not Anthropic model names.
-- Not all Anthropic-specific features may be supported. Standard message creation, streaming, and token counting work as expected.
+- Most models here are open-source. Anthropic's Claude models are the ones under `anthropic/`.
+- Model names are DeepInfra identifiers (e.g. `zai-org/GLM-5.2`). The only Anthropic names accepted are bare Claude ids, which map to the `anthropic/` models (see [Model names](#model-names)).
+- Not all Anthropic-specific features may be supported. Standard message creation, streaming, token counting, and model listing work as expected.
 
 <CardGroup cols={2}>
   <Card title="Chat Completions" icon="comments" href="/chat/overview">
