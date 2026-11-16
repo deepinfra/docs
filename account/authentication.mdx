@@ -29,7 +29,7 @@ Where an area has two scopes, the `:read` one only reads and the full one also c
 | Scope | What the key may do |
 |---|---|
 | `account:read` | Read the account's profile, rate limits and GPU pool |
-| `account_api_key` | Everything `account_api_key:read` allows, and [create, change and delete the account's API keys](#manage-api-keys-with-an-api-key). [Sensitive](#sensitive-scopes) |
+| `account_api_key` | Everything `account_api_key:read` allows, and [create, change and delete the account's API keys](#manage-api-keys-with-an-api-key). [Sensitive](#sensitive-scopes): [enable it in the dashboard](#enable-account_api_key) first |
 | `account_api_key:read` | [List the account's API keys and read a key's details](#manage-api-keys-with-an-api-key), never a key's secret |
 | `account_scoped_jwt` | Everything `account_scoped_jwt:read` allows, and [create scoped JWTs](#create-a-scoped-jwt) signed by this key |
 | `account_scoped_jwt:read` | [Inspect scoped JWTs](#inspect-a-jwt) |
@@ -73,7 +73,7 @@ Keys created before scopes existed are unrestricted. To limit one, choose **Scop
 
 A **sensitive** scope grants power over the account itself, so it is off by default. Today the only one is `account_api_key`.
 
-- It can be set on a key only once DeepInfra has enabled it for your account. Contact [feedback@deepinfra.com](mailto:feedback@deepinfra.com) to enable it. Until then the dashboard does not offer it, and setting it through the API is refused with `422` (`scopes not enabled for this account: account_api_key`).
+- It can be set on a key only once the account owner has [enabled it](#enable-account_api_key). Until then the dashboard does not offer it, and setting it through the API is refused with `422` (`scopes not enabled for this account: account_api_key`).
 - `unrestricted` does not grant it. A key that needs it must be scoped and hold it by name.
 - An API key can never grant it: not to a key it creates, nor to a key it changes. A key created by another API key can never hold it, even when changed from the dashboard. Such requests are refused with `422`:
 
@@ -82,6 +82,18 @@ A **sensitive** scope grants power over the account itself, so it is off by defa
 ```
 
 The dashboard shows sensitive scopes in red. On an account with a sensitive scope enabled, it labels unrestricted keys "All non-sensitive".
+
+##### Enable `account_api_key`
+
+Only the account owner can enable it, signed in to the dashboard. For a team, that is the team owner. No API key can enable it, whatever its scopes.
+
+1. Open [Account → Danger zone](https://deepinfra.com/dash/account/danger-zone).
+2. Tick **Allow API keys to manage API keys** and confirm.
+3. Confirm your password when asked. An account without a password (Google, GitHub or SSO sign-in) is asked to sign in again if its last sign-in was more than 10 minutes ago.
+
+The scope is then offered when you [create a key](https://deepinfra.com/dash/keys) or change a key's scopes, and `POST /v1/api-tokens` and `PATCH /v1/api-tokens/id/{token_id}` accept it in `scopes`.
+
+To turn it off, untick the box. The dashboard lists the keys that hold the scope: turning it off deletes them, and anything using them stops working.
 
 #### Manage API keys with an API key
 
