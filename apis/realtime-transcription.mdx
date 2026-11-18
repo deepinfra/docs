@@ -1,0 +1,384 @@
+---
+title: Realtime transcription
+description: Stream audio over a WebSocket and get the transcript as words are recognized. Compatible with OpenAI's Realtime transcription API.
+icon: waveform-lines
+---
+
+Realtime transcription streams audio to a model over a WebSocket and returns the transcript while the speaker is still talking: partial text as words are recognized, and a final transcript with word timings for each utterance. The protocol is compatible with OpenAI's Realtime transcription API, so the OpenAI SDKs work with it. For transcribing a finished audio file over HTTP, see [Speech Recognition](/apis/speech).
+
+## Models
+
+Currently [nvidia/Nemo3-ASR-Streaming](https://deepinfra.com/nvidia/Nemo3-ASR-Streaming) is served over realtime sessions. A model that is not refuses the connection with `model_not_realtime` (close code 1008).
+
+## Connect
+
+```
+wss://api.deepinfra.com/v1/realtime?model=nvidia/Nemo3-ASR-Streaming
+```
+
+Authenticate with `Authorization: Bearer $DEEPINFRA_API_KEY`. Browsers, which cannot set headers on a WebSocket, can pass the key as the subprotocol `openai-insecure-api-key.<key>` instead.
+
+<Warning>
+Do not ship a long-lived API key to a browser: create a short-lived token limited to this model on your server with [`POST /v1/scoped-jwt`](/account/authentication#create-a-scoped-jwt) and pass that instead. A subprotocol cannot contain `:`, so send the returned `jwt:<token>` as `jwt.<token>`, as in the JavaScript example below.
+</Warning>
+
+Optional query parameters, for [session rotation](#session-rotation-going_away): `going_away=1`, `going_away_test_s=<10 to 600>`, `rotate_from=<session id>` and `preroll_s=<0 to 600>`.
+
+## Example
+
+<CodeGroup>
+
+```python Python
+import asyncio
+import base64
+import json
+import os
+import wave
+
+from websockets.asyncio.client import connect
+
+URL = "wss://api.deepinfra.com/v1/realtime?model=nvidia/Nemo3-ASR-Streaming"
+PACKET_SEC = 0.1
+
+
+async def main() -> None:
+    with wave.open("speech.wav") as w:  # 16-bit mono PCM
+        rate, pcm = w.getframerate(), w.readframes(w.getnframes())
+    packet = int(rate * PACKET_SEC) * 2
+    headers = {"Authorization": "Bearer " + os.environ["DEEPINFRA_API_KEY"]}
+
+    async with connect(URL, additional_headers=headers) as ws:
+        await ws.send(json.dumps({"type": "session.update", "session": {
+            "type": "transcription",
+            "audio": {"input": {"format": {"type": "audio/pcm", "rate": rate}}}}}))
+
+        async def send_audio() -> None:
+            for off in range(0, len(pcm), packet):
+                await ws.send(json.dumps({"type": "input_audio_buffer.append",
+                                          "audio": base64.b64encode(pcm[off:off + packet]).decode()}))
+                await asyncio.sleep(PACKET_SEC)
+            await ws.send(json.dumps({"type": "session.close"}))
+
+        sender = asyncio.create_task(send_audio())
+        async for raw in ws:
+            event = json.loads(raw)
+            if event["type"] == "conversation.item.input_audio_transcription.delta":
+                print("partial:", event.get("transcript") or event["delta"])
+            elif event["type"] == "conversation.item.input_audio_transcription.completed":
+                print("final:", event["transcript"])
+            elif event["type"] == "error":
+                print("error:", event["error"]["code"], event["error"]["message"])
+        await sender
+
+
+asyncio.run(main())
+```
+
+```python OpenAI SDK
+# pip install "openai[realtime]>=2"
+import asyncio
+import base64
+import os
+import wave
+
+from openai import AsyncOpenAI
+
+MODEL = "nvidia/Nemo3-ASR-Streaming"
+PACKET_SEC = 0.1
+
+
+async def main() -> None:
+    with wave.open("speech.wav") as w:  # 16-bit mono PCM
+        rate, pcm = w.getframerate(), w.readframes(w.getnframes())
+    packet = int(rate * PACKET_SEC) * 2
+
+    client = AsyncOpenAI(
+        api_key=os.environ["DEEPINFRA_API_KEY"],
+        base_url="https://api.deepinfra.com/v1/openai",
+        websocket_base_url="wss://api.deepinfra.com/v1/openai",
+    )
+    async with client.realtime.connect(model=MODEL) as conn:
+        await conn.session.update(session={"type": "transcription", "audio": {"input": {
+            "format": {"type": "audio/pcm", "rate": rate},
+            "transcription": {"model": MODEL}}}})
+
+        async def send_audio() -> None:
+            for off in range(0, len(pcm), packet):
+                await conn.input_audio_buffer.append(audio=base64.b64encode(pcm[off:off + packet]).decode())
+                await asyncio.sleep(PACKET_SEC)
+            # DeepInfra extension: transcribe the open utterance and end the session.
+            await conn.send({"type": "session.close"})
+
+        sender = asyncio.create_task(send_audio())
+        async for event in conn:
+            if event.type == "conversation.item.input_audio_transcription.delta":
+                print("partial:", event.delta)
+            elif event.type == "conversation.item.input_audio_transcription.completed":
+                print("final:", event.transcript)
+            elif event.type == "error":
+                print("error:", event.error.code, event.error.message)
+        await sender
+
+
+asyncio.run(main())
+```
+
+```javascript JavaScript (browser)
+const MODEL = "nvidia/Nemo3-ASR-Streaming";
+
+// token: the `jwt:<token>` returned by POST /v1/scoped-jwt
+async function startCaptions(token, onPartial, onFinal) {
+  const audio = new AudioContext();
+  const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+  // Converts the microphone's float samples to 16-bit PCM, 100 ms per message.
+  const worklet = `registerProcessor("pcm", class extends AudioWorkletProcessor {
+    constructor() { super(); this.buf = []; }
+    process([input]) {
+      for (const s of input[0] ?? []) this.buf.push(Math.max(-1, Math.min(1, s)) * 0x7fff);
+      if (this.buf.length >= sampleRate / 10) {
+        this.port.postMessage(Int16Array.from(this.buf).buffer);
+        this.buf = [];
+      }
+      return true;
+    }
+  });`;
+  await audio.audioWorklet.addModule(URL.createObjectURL(new Blob([worklet], { type: "text/javascript" })));
+  const node = new AudioWorkletNode(audio, "pcm");
+  audio.createMediaStreamSource(mic).connect(node);
+
+  const ws = new WebSocket(
+    `wss://api.deepinfra.com/v1/realtime?model=${MODEL}`,
+    ["realtime", `openai-insecure-api-key.${token.replace(/^jwt:/, "jwt.")}`],
+  );
+  ws.onopen = () => {
+    ws.send(JSON.stringify({
+      type: "session.update",
+      session: { type: "transcription", audio: { input: { format: { type: "audio/pcm", rate: audio.sampleRate } } } },
+    }));
+    node.port.onmessage = ({ data }) => {
+      const b64 = btoa(String.fromCharCode(...new Uint8Array(data)));
+      ws.send(JSON.stringify({ type: "input_audio_buffer.append", audio: b64 }));
+    };
+  };
+  ws.onmessage = ({ data }) => {
+    const event = JSON.parse(data);
+    if (event.type === "conversation.item.input_audio_transcription.delta") {
+      onPartial(event.transcript ?? event.delta);
+    } else if (event.type === "conversation.item.input_audio_transcription.completed") {
+      onFinal(event.transcript);
+    } else if (event.type === "error") {
+      console.error(event.error.code, event.error.message);
+    }
+  };
+
+  return () => {
+    ws.send(JSON.stringify({ type: "session.close" }));
+    mic.getTracks().forEach((t) => t.stop());
+    audio.close();
+  };
+}
+```
+
+</CodeGroup>
+
+```
+partial: Welcome to our AI
+partial: Welcome to our AI testing session.
+final: Welcome to our AI testing session.
+```
+
+## Client events
+
+- **session.update**: sets the input audio format. Send it first. Audio is 16-bit little-endian mono PCM at any sample rate (it is resampled on our side); the default is 24000 Hz.
+- **input_audio_buffer.append**: a base64-encoded chunk of PCM audio. Send audio in real time, for example 100 ms per message; sending audio much faster than real time ends the session.
+- **session.close**: transcribes any open utterance and ends the session.
+
+## Server events
+
+- **session.created**, **session.updated**: the session is ready, and the format you set. `session.id` is the session's id. A session that opted in to rotation also gets `preroll_s` (the pre-roll granted, often 0) and `align_samples` (in your sample rate, so read it from `session.updated`).
+- **conversation.item.input_audio_transcription.delta**: partial text as it is recognized. `delta` is the new text; `transcript` is the whole open utterance so far, which may revise earlier words.
+- **conversation.item.input_audio_transcription.completed**: the final `transcript` of an utterance, and its `words`, each with `word`, `start` and `end` in seconds from the session's first audio sample. A long utterance can arrive as several completed items, and the last item of a session can come without `words`.
+- **session.going_away**: only for a session that opted in; see [Session rotation](#session-rotation-going_away).
+- **session.end**: sent before a normal close, with `stats.audio_seconds` and `stats.utterances`.
+- **error**: `error.code` says what went wrong. An error that ends the session is followed by a close.
+
+## Close codes
+
+- **1000**: the session ended normally, after `session.close`.
+- **1001**: a `session.going_away` deadline passed (`going_away`). Open a new session.
+- **1012**: the server is restarting (`server_restart`), or the session lost its reservation (`session_expired`). Reconnect.
+- **1013**: try again later, with backoff: for example `server_is_overloaded`, `websocket_connection_limit_reached`, `rate_limit_exceeded`, `idle_timeout` or `audio_backlog`.
+- **1014**: the model failed the session (`inference_error`). Reconnect.
+- **1011**: an internal error. Retry with backoff, and report it if it repeats.
+- **1008**, **3000**, **3003**: these fail again until the request or the account changes (for example `credit_balance_exhausted`, `model_not_found`, `invalid_api_key`, `forbidden`).
+
+## Session rotation (going_away)
+
+We sometimes have to end a live session, for example to move it off a model server or to restart our gateway. A session that opts in is told first, so it can move to a new session without losing audio.
+
+- Opt in with `going_away=1` on the connect URL.
+- When the session must end, it gets **session.going_away** with `reason` (`model_pod_drain`, `gateway_shutdown` or `test`) and `deadline_s`, the seconds until it is ended. A second event can follow if the deadline moves sooner.
+- Before the deadline, open a new session with `rotate_from=<old session id>&preroll_s=<seconds>`. `preroll_s` is how much recent audio you will send again, up to 600; the grant, capped by the model, is `preroll_s` in its `session.updated`, and is 0 if the old session is not yours, is on another model, was already taken over, or ended more than 60 s ago (an ended session can be taken over only if it had opted in).
+- On the new session, send at most the last `preroll_s` seconds at once, starting at a sample that is a multiple of `align_samples` counted from the old session's first sample; then send live audio to both sessions.
+- Keep the old session until the new one catches up, then join on words: find 3 consecutive words with the same text on both sessions whose start times are within 1 s of each other (the new session's `words` count from its first sample, so add the replay's offset). Use the old session's words through that run and the new session's after it, and close the old session. If no such run comes within about 20 s, or the old session closes first, switch anyway at the last word the old session gave; a word there can then be lost or repeated.
+- At the deadline, a session still open gets the error `going_away` and closes with 1001. If there was too little time to tell it, it closes as a session that did not opt in would: 1012 for a gateway restart, 1014 for a model server.
+- To test, connect with `going_away_test_s=N` (10 to 600): a `test` event comes N seconds into the session, and the session is closed with 1001 60 s later, like a real one.
+
+With the OpenAI SDK, opt in with `client.realtime.connect(model=MODEL, extra_query={"going_away": "1"})`. The `session.going_away` event arrives in `async for event in conn` with `event.reason` and `event.deadline_s`; match on `event.type`, as the SDK has no class for it. `event.session.preroll_s` and `event.session.align_samples` are on `session.updated`, and `rotate_from`, `preroll_s` and `going_away_test_s` go in `extra_query` as well.
+
+### Rotation example
+
+This session asks for a test `session.going_away` 10 seconds in. On the event, it opens a new session with a 10 s pre-roll, replays that audio, streams live audio to both sessions, joins on words and closes the old session. On a 150 s recording its transcript matched a session without rotation: 343 words each, none lost or repeated.
+
+```python Python
+import asyncio
+import base64
+import json
+import math
+import os
+import re
+import wave
+
+from websockets.asyncio.client import connect
+from websockets.exceptions import ConnectionClosed
+
+URL = "wss://api.deepinfra.com/v1/realtime?model=nvidia/Nemo3-ASR-Streaming&going_away=1"
+PACKET_SEC = 0.1
+PREROLL_S = 10
+JOIN_WITHIN_S = 20  # no 3-word join by then: switch anyway
+HEADERS = {"Authorization": "Bearer " + os.environ["DEEPINFRA_API_KEY"]}
+
+
+def norm(word: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", word.lower())
+
+
+class Session:
+    async def open(self, query: str, rate: int) -> "Session":
+        self.ws = await connect(URL + query, additional_headers=HEADERS)
+        await self.ws.send(json.dumps({"type": "session.update", "session": {
+            "type": "transcription", "audio": {"input": {"format": {"type": "audio/pcm", "rate": rate}}}}}))
+        while (event := json.loads(await self.ws.recv()))["type"] != "session.updated":
+            pass
+        self.id = event["session"]["id"]
+        self.preroll_s = event["session"]["preroll_s"]  # granted; may be 0
+        self.align = event["session"]["align_samples"] or 1
+        self.first = 0  # the sample of our audio that is this session's first sample
+        self.words = []  # (start, word), start in seconds on our audio's clock
+        self.shown = 0  # how many of self.words are printed
+        return self
+
+    async def send(self, pcm: bytes) -> None:
+        try:
+            await self.ws.send(json.dumps({"type": "input_audio_buffer.append",
+                                           "audio": base64.b64encode(pcm).decode()}))
+        except ConnectionClosed:
+            pass
+
+    def show(self, upto: int) -> None:
+        if upto > self.shown:
+            print("final:", " ".join(w for _, w in self.words[self.shown:upto]))
+            self.shown = upto
+
+
+def join(old: Session, new: Session) -> tuple[int, int] | None:
+    """The first 3 words both sessions agree on (same text, start within 1 s):
+    the end of that run in old.words and in new.words."""
+    for i in range(old.shown, len(old.words) - 2):
+        for j in range(len(new.words) - 2):
+            if all(norm(old.words[i + k][1]) == norm(new.words[j + k][1])
+                   and abs(old.words[i + k][0] - new.words[j + k][0]) <= 1.0 for k in range(3)):
+                return i + 3, j + 3
+    return None
+
+
+async def main() -> None:
+    with wave.open("speech.wav") as w:  # 16-bit mono PCM
+        rate, pcm = w.getframerate(), w.readframes(w.getnframes())
+    step = int(rate * PACKET_SEC) * 2
+    # going_away_test_s=10: a test session.going_away 10 s in, to try the rotation.
+    state = {"cur": await Session().open("&going_away_test_s=10", rate), "new": None, "pos": 0}
+
+    async def switch(run: tuple[int, int] | None) -> None:
+        """Print the old session's words through the join (all of them without one), make
+        the new session current, and close the old one."""
+        old, new = state["cur"], state["new"]
+        state["cur"], state["new"] = new, None
+        if run is None:  # no join: a word at the switch can be lost or repeated
+            old.show(len(old.words))
+            last = old.words[-1][0] if old.words else 0.0
+            run = (old.shown, next((j for j, w in enumerate(new.words) if w[0] > last), len(new.words)))
+            print("switched without a join")
+        else:
+            print("joined")
+        old.show(run[0])
+        new.shown = run[1]
+        new.show(len(new.words))
+        await old.ws.close()
+
+    async def fallback(new: Session) -> None:
+        await asyncio.sleep(JOIN_WITHIN_S)
+        if state["new"] is new:
+            await switch(None)
+
+    async def read(s: Session) -> None:
+        async for raw in s.ws:
+            event = json.loads(raw)
+            if event["type"] == "session.going_away" and s is state["cur"] and not state["new"]:
+                print(f"going_away: {event['reason']}, {event['deadline_s']} s left")
+                new = await Session().open(f"&rotate_from={s.id}&preroll_s={PREROLL_S}", rate)
+                # Replay at most the granted pre-roll, starting on a multiple of
+                # align_samples counted from the old session's first sample.
+                back = max(state["pos"] // 2 - int(new.preroll_s * rate), s.first)
+                new.first = min(s.first + math.ceil((back - s.first) / s.align) * s.align, state["pos"] // 2)
+                off = new.first * 2
+                while off < state["pos"]:  # catch up to the live position, then go live
+                    await new.send(pcm[off:min(off + step, state["pos"])])
+                    off = min(off + step, state["pos"])
+                state["new"] = new
+                asyncio.create_task(read(new))
+                asyncio.create_task(fallback(new))
+            elif event["type"] == "conversation.item.input_audio_transcription.completed":
+                words = [(w["start"] + s.first / rate, w["word"]) for w in event["words"]]
+                if not words and event["transcript"]:  # the last item can come without words
+                    words = [(s.words[-1][0] if s.words else s.first / rate, event["transcript"])]
+                s.words += words
+                if state["new"] is None:
+                    state["cur"].show(len(state["cur"].words))
+                elif (run := join(state["cur"], state["new"])) is not None:
+                    await switch(run)  # old session's words through the run, new one's after it
+        if s is state["cur"] and state["new"] is not None:  # the old session ended first
+            await switch(None)
+
+    asyncio.create_task(read(state["cur"]))
+    for off in range(0, len(pcm), step):
+        state["pos"] = min(off + step, len(pcm))
+        for s in filter(None, (state["cur"], state["new"])):
+            await s.send(pcm[off:state["pos"]])
+        await asyncio.sleep(PACKET_SEC)
+    for s in filter(None, (state["new"], state["cur"])):  # a rotation still open: end it too
+        await s.ws.send(json.dumps({"type": "session.close"}))
+        await s.ws.wait_closed()
+    state["cur"].show(len(state["cur"].words))
+
+
+asyncio.run(main())
+```
+
+```
+...
+final: Nor is Mr.
+final: Quilter's
+final: manner less interesting
+going_away: test, 60 s left
+joined
+final: than his matter.
+final: He
+final: tells us that
+...
+```
+
+## Billing
+
+Usage is billed per second the session is connected. A session that rotates in also bills the pre-roll it sent ahead of real time. The session it took over is not billed for 60 s from the takeover if it was told by a real event (not a `test` one), so the overlap is billed once.

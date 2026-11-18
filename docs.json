@@ -72,6 +72,7 @@
               "apis/image-generation",
               "apis/text-to-video",
               "apis/speech",
+              "apis/realtime-transcription",
               "apis/text-to-speech",
               "apis/deepinfra-native"
             ]
