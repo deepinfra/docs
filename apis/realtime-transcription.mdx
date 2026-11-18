@@ -8,7 +8,7 @@ Realtime transcription streams audio to a model over a WebSocket and returns the
 
 ## Models
 
-[nvidia/Nemo3-ASR-Streaming](https://deepinfra.com/nvidia/Nemo3-ASR-Streaming) is served over realtime sessions. A model that is not refuses the connection with `model_not_realtime` (close code 1008).
+Currently [nvidia/Nemo3-ASR-Streaming](https://deepinfra.com/nvidia/Nemo3-ASR-Streaming) is served over realtime sessions. A model that is not refuses the connection with `model_not_realtime` (close code 1008).
 
 ## Connect
 
@@ -19,10 +19,10 @@ wss://api.deepinfra.com/v1/realtime?model=nvidia/Nemo3-ASR-Streaming
 Authenticate with `Authorization: Bearer $DEEPINFRA_API_KEY`. Browsers, which cannot set headers on a WebSocket, can pass the key as the subprotocol `openai-insecure-api-key.<key>` instead.
 
 <Warning>
-Do not ship a long-lived API key to a browser: create a short-lived token limited to this model on your server with [`POST /v1/scoped-jwt`](/account/authentication) and pass that instead. A subprotocol cannot contain `:`, so send the returned `jwt:<token>` as `jwt.<token>`, as in the JavaScript example below.
+Do not ship a long-lived API key to a browser: create a short-lived token limited to this model on your server with [`POST /v1/scoped-jwt`](/account/authentication#create-a-scoped-jwt) and pass that instead. A subprotocol cannot contain `:`, so send the returned `jwt:<token>` as `jwt.<token>`, as in the JavaScript example below.
 </Warning>
 
-Optional query parameters, for [session rotation](#session-rotation-going-away): `going_away=1`, `going_away_test_s=<10 to 600>`, `rotate_from=<session id>` and `preroll_s=<0 to 600>`.
+Optional query parameters, for [session rotation](#session-rotation-going_away): `going_away=1`, `going_away_test_s=<10 to 600>`, `rotate_from=<session id>` and `preroll_s=<0 to 600>`.
 
 ## Example
 
@@ -199,7 +199,7 @@ final: Welcome to our AI testing session.
 - **session.created**, **session.updated**: the session is ready, and the format you set. `session.id` is the session's id. A session that opted in to rotation also gets `preroll_s` (the pre-roll granted, often 0) and `align_samples` (in your sample rate, so read it from `session.updated`).
 - **conversation.item.input_audio_transcription.delta**: partial text as it is recognized. `delta` is the new text; `transcript` is the whole open utterance so far, which may revise earlier words.
 - **conversation.item.input_audio_transcription.completed**: the final `transcript` of an utterance, and its `words`, each with `word`, `start` and `end` in seconds from the session's first audio sample. A long utterance can arrive as several completed items, and the last item of a session can come without `words`.
-- **session.going_away**: only for a session that opted in; see [Session rotation](#session-rotation-going-away).
+- **session.going_away**: only for a session that opted in; see [Session rotation](#session-rotation-going_away).
 - **session.end**: sent before a normal close, with `stats.audio_seconds` and `stats.utterances`.
 - **error**: `error.code` says what went wrong. An error that ends the session is followed by a close.
 
