@@ -112,7 +112,7 @@ Scoped JWT tokens let you grant limited inference access to third parties withou
 - **Expiration** — time-limited (up to 1 year)
 - **Spending limit** — maximum USD spend
 
-Usage is counted against the API key that was used to sign the JWT.
+The JWT is signed by the API key you create it with, and usage is counted against that key.
 
 A scoped JWT can do no more than the key that signed it: it has that key's [scopes](#scopes), as they are at the time of each request. Creating a JWT needs the `account_scoped_jwt` scope and inspecting one needs `account_scoped_jwt:read`. A JWT signed by a key without `inference` cannot run models.
 
@@ -123,7 +123,6 @@ curl -X POST "https://api.deepinfra.com/v1/scoped-jwt" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
   -d '{
-      "api_key_name": "auto",
       "models": ["deepseek-ai/DeepSeek-V4-Flash-0731"],
       "expires_delta": 3600,
       "spending_limit": 1.0
@@ -143,6 +142,10 @@ This creates a token limited to `deepseek-ai/DeepSeek-V4-Flash-0731`, expiring i
 - `expires_delta` — no expiration (defaults to 1 year)
 - `spending_limit` — no spending limit
 - Use `expires_at` (unix timestamp) instead of `expires_delta` if preferred
+
+<Note>
+`api_key_name` is deprecated. It used to choose the signing key. Omit it: a JWT is signed by the key that creates it, and naming a different key will be refused.
+</Note>
 
 ### Inspect a JWT
 
